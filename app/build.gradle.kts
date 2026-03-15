@@ -11,8 +11,8 @@ android {
         applicationId = "com.vpnlauncher"
         minSdk = 28
         targetSdk = 33
-        versionCode = 2
-        versionName = "1.1.0"
+        versionCode = 3
+        versionName = "1.2.0"
     }
 
     signingConfigs {

@@ -26,15 +26,6 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Generate signing keystore
-        run: |
-          keytool -genkeypair -v \
-            -keystore app/release.keystore \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -alias vpnlauncher \
-            -storepass vpnlauncher -keypass vpnlauncher \
-            -dname "CN=VPN Launcher, O=vpnlauncher, C=GB"
-
       - name: Build Release APK
         run: ./gradlew assembleRelease
 
