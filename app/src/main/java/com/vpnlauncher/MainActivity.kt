@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.widget.ImageView
 import android.widget.Switch
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -168,13 +167,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // Router VPN enabled but not verified — still allow with warning
-        if (configStore.isRouterVpnEnabled) {
-            Toast.makeText(this, R.string.router_vpn_not_verified, Toast.LENGTH_SHORT).show()
-            launchApp(app.packageName)
-            return
-        }
-
+        // VPN required but not active — block and show dialog
         showVpnBlockedDialog(app.packageName)
     }
 
