@@ -4,24 +4,26 @@ import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
+import android.view.KeyEvent
+import android.view.View
 import android.widget.ImageView
-import android.widget.Switch
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var vpnChecker: VpnChecker
     private lateinit var ipVpnChecker: IpVpnChecker
+    private lateinit var vpnAppDetector: VpnAppDetector
     private lateinit var configStore: AppConfigStore
-    private lateinit var adapter: AppListAdapter
+    private lateinit var adapter: AppGridAdapter
     private lateinit var tvVpnStatus: TextView
     private lateinit var ivVpnStatus: ImageView
-    private lateinit var rvAppList: RecyclerView
-    private lateinit var switchRouterVpn: Switch
-    private lateinit var tvRouterVpnHint: TextView
+    private lateinit var rvAppGrid: RecyclerView
+    private lateinit var tvEditHint: TextView
+    private lateinit var btnRouterVpn: TextView
 
     private var pendingLaunchPackage: String? = null
 
@@ -33,7 +35,6 @@ class MainActivity : AppCompatActivity() {
 
     private val excludedPackages = setOf(
         "android",
-        "com.nordvpn.android",
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,52 +43,64 @@ class MainActivity : AppCompatActivity() {
 
         vpnChecker = VpnChecker(this)
         ipVpnChecker = IpVpnChecker()
+        vpnAppDetector = VpnAppDetector(this)
         configStore = AppConfigStore(this)
 
         tvVpnStatus = findViewById(R.id.tvVpnStatus)
         ivVpnStatus = findViewById(R.id.ivVpnStatus)
-        rvAppList = findViewById(R.id.rvAppList)
-        switchRouterVpn = findViewById(R.id.switchRouterVpn)
-        tvRouterVpnHint = findViewById(R.id.tvRouterVpnHint)
+        rvAppGrid = findViewById(R.id.rvAppGrid)
+        tvEditHint = findViewById(R.id.tvEditHint)
+        btnRouterVpn = findViewById(R.id.btnRouterVpn)
 
-        // Quick access buttons
+        // Quick access: Settings
         findViewById<TextView>(R.id.btnSettings).setOnClickListener {
             startActivity(Intent(Settings.ACTION_SETTINGS))
         }
 
+        // Quick access: Appstore
         findViewById<TextView>(R.id.btnAppStore).setOnClickListener {
             val intent = packageManager.getLaunchIntentForPackage("com.amazon.venezia")
                 ?: packageManager.getLaunchIntentForPackage("com.amazon.apps.store")
             intent?.let { startActivity(it) }
         }
 
-        findViewById<TextView>(R.id.btnNordVpn).setOnClickListener {
-            val intent = packageManager.getLaunchIntentForPackage("com.nordvpn.android")
-            intent?.let { startActivity(it) }
+        // Quick access: VPN (auto-detect)
+        findViewById<TextView>(R.id.btnVpn).setOnClickListener {
+            openVpnApp()
         }
 
-        // Router VPN toggle
-        switchRouterVpn.isChecked = configStore.isRouterVpnEnabled
-        switchRouterVpn.setOnCheckedChangeListener { _, checked ->
-            configStore.isRouterVpnEnabled = checked
-            if (checked) {
+        // Quick access: Router VPN toggle
+        updateRouterVpnButton()
+        btnRouterVpn.setOnClickListener {
+            configStore.isRouterVpnEnabled = !configStore.isRouterVpnEnabled
+            updateRouterVpnButton()
+            if (configStore.isRouterVpnEnabled) {
                 verifyRouterVpn()
-            } else {
-                tvRouterVpnHint.text = getString(R.string.router_vpn_hint)
-                refreshVpnHeader()
             }
-        }
-
-        adapter = AppListAdapter(emptyList(), configStore) { app ->
-            onAppClicked(app)
-        }
-
-        rvAppList.layoutManager = LinearLayoutManager(this)
-        rvAppList.adapter = adapter
-
-        vpnChecker.startMonitoring { _ ->
             refreshVpnHeader()
         }
+
+        // Grid adapter with reorder support
+        adapter = AppGridAdapter(
+            apps = mutableListOf(),
+            configStore = configStore,
+            onAppClicked = { app -> onAppClicked(app) },
+            onAppLongClicked = { position -> enterEditMode(position) }
+        )
+
+        rvAppGrid.layoutManager = GridLayoutManager(this, 4)
+        rvAppGrid.adapter = adapter
+
+        // Handle D-pad movement in edit mode
+        rvAppGrid.addOnItemTouchListener(object : RecyclerView.SimpleOnItemTouchListener() {})
+        rvAppGrid.setOnKeyListener { _, keyCode, event ->
+            if (!adapter.isInEditMode || event.action != KeyEvent.ACTION_UP) {
+                return@setOnKeyListener false
+            }
+            handleEditModeKey(keyCode)
+        }
+
+        vpnChecker.startMonitoring { _ -> refreshVpnHeader() }
 
         refreshVpnHeader()
         loadApps()
@@ -99,31 +112,15 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-
         refreshVpnHeader()
+        updateRouterVpnButton()
         loadApps()
 
-        // Handle pending launch from returning from NordVPN
         val pending = pendingLaunchPackage
         if (pending != null) {
             pendingLaunchPackage = null
-            if (vpnChecker.isVpnActive()) {
-                // Device VPN is on — launch immediately
+            if (vpnChecker.isVpnActive() || configStore.isRouterVpnEnabled) {
                 launchApp(pending)
-            } else if (configStore.isRouterVpnEnabled) {
-                // Router mode — verify IP then launch if confirmed
-                val savedPending = pending
-                ipVpnChecker.checkVpnByIp { isVpn ->
-                    if (isVpn) {
-                        launchApp(savedPending)
-                    }
-                    tvRouterVpnHint.text = getString(
-                        if (isVpn) R.string.router_vpn_verified
-                        else R.string.router_vpn_not_verified
-                    )
-                    refreshVpnHeader()
-                }
-                return
             }
         }
 
@@ -139,13 +136,56 @@ class MainActivity : AppCompatActivity() {
 
     @Suppress("DEPRECATION")
     override fun onBackPressed() {
-        // Do nothing — this is the home screen
+        if (adapter.isInEditMode) {
+            exitEditMode()
+        }
+        // Otherwise do nothing — this is the home screen
     }
 
-    /**
-     * Returns true if VPN is active at device level, or if router VPN
-     * mode is enabled (trusts the user's toggle).
-     */
+    // --- Edit mode (long-press reorder) ---
+
+    private fun enterEditMode(position: Int) {
+        adapter.editModePosition = position
+        tvEditHint.visibility = View.VISIBLE
+    }
+
+    private fun exitEditMode() {
+        adapter.editModePosition = -1
+        tvEditHint.visibility = View.GONE
+        // Save the new order
+        configStore.saveAppOrder(adapter.getAppOrder())
+    }
+
+    private fun handleEditModeKey(keyCode: Int): Boolean {
+        val pos = adapter.editModePosition
+        if (pos < 0) return false
+        val columns = 4
+
+        val newPos = when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_LEFT -> if (pos > 0) pos - 1 else pos
+            KeyEvent.KEYCODE_DPAD_RIGHT -> if (pos < adapter.itemCount - 1) pos + 1 else pos
+            KeyEvent.KEYCODE_DPAD_UP -> if (pos >= columns) pos - columns else pos
+            KeyEvent.KEYCODE_DPAD_DOWN -> if (pos + columns < adapter.itemCount) pos + columns else pos
+            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
+                exitEditMode()
+                return true
+            }
+            KeyEvent.KEYCODE_BACK -> {
+                exitEditMode()
+                return true
+            }
+            else -> return false
+        }
+
+        if (newPos != pos) {
+            adapter.moveApp(pos, newPos)
+            rvAppGrid.scrollToPosition(newPos)
+        }
+        return true
+    }
+
+    // --- VPN logic ---
+
     private fun isVpnEffectivelyActive(): Boolean {
         if (vpnChecker.isVpnActive()) return true
         if (configStore.isRouterVpnEnabled) return true
@@ -153,20 +193,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun verifyRouterVpn() {
-        tvRouterVpnHint.text = getString(R.string.vpn_checking)
         ipVpnChecker.checkVpnByIp { isVpn ->
-            tvRouterVpnHint.text = getString(
-                if (isVpn) R.string.router_vpn_verified
-                else R.string.router_vpn_not_verified
-            )
+            // Informational only — the toggle is trusted regardless
             refreshVpnHeader()
         }
     }
 
-    /**
-     * Updates the VPN status header based on current state.
-     * Single source of truth — no parameters, just reads current state.
-     */
     private fun refreshVpnHeader() {
         val deviceVpn = vpnChecker.isVpnActive()
         val routerVpn = configStore.isRouterVpnEnabled
@@ -189,10 +221,22 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun updateRouterVpnButton() {
+        val enabled = configStore.isRouterVpnEnabled
+        btnRouterVpn.text = getString(
+            if (enabled) R.string.router_vpn_on else R.string.router_vpn_off
+        )
+        btnRouterVpn.setTextColor(getColor(
+            if (enabled) R.color.vpn_connected else R.color.text_secondary
+        ))
+    }
+
+    // --- App loading with custom order ---
+
     private fun loadApps() {
         val pm = packageManager
         @Suppress("DEPRECATION")
-        val apps = pm.getInstalledApplications(0)
+        val allApps = pm.getInstalledApplications(0)
             .filter { appInfo ->
                 pm.getLaunchIntentForPackage(appInfo.packageName) != null
             }
@@ -214,10 +258,19 @@ class MainActivity : AppCompatActivity() {
                     icon = pm.getApplicationIcon(appInfo)
                 )
             }
-            .sortedBy { it.label.lowercase() }
 
-        adapter.updateApps(apps)
+        // Apply saved order
+        val savedOrder = configStore.getAppOrder()
+        val orderMap = savedOrder.withIndex().associate { (index, pkg) -> pkg to index }
+        val sorted = allApps.sortedWith(compareBy(
+            { orderMap[it.packageName] ?: Int.MAX_VALUE },
+            { it.label.lowercase() }
+        ))
+
+        adapter.updateApps(sorted)
     }
+
+    // --- App launch + VPN blocking ---
 
     private fun onAppClicked(app: AppInfo) {
         if (!configStore.isVpnRequired(app.packageName)) {
@@ -234,27 +287,62 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showVpnBlockedDialog(packageName: String) {
-        val nordvpnIntent = packageManager.getLaunchIntentForPackage("com.nordvpn.android")
+        val vpnApps = vpnAppDetector.getInstalledVpnApps()
 
         val builder = AlertDialog.Builder(this)
             .setTitle(R.string.vpn_not_connected_title)
             .setMessage(R.string.vpn_not_connected_message)
             .setNegativeButton(R.string.cancel, null)
 
-        if (nordvpnIntent != null) {
-            builder.setPositiveButton(R.string.open_nordvpn) { _, _ ->
-                pendingLaunchPackage = packageName
-                startActivity(nordvpnIntent)
+        when {
+            vpnApps.size == 1 -> {
+                val vpnApp = vpnApps[0]
+                builder.setPositiveButton(getString(R.string.open_vpn, vpnApp.label)) { _, _ ->
+                    pendingLaunchPackage = packageName
+                    val intent = this.packageManager.getLaunchIntentForPackage(vpnApp.packageName)
+                    intent?.let { startActivity(it) }
+                }
             }
-        } else {
-            builder.setPositiveButton(R.string.vpn_app_not_found, null)
+            vpnApps.size > 1 -> {
+                val labels = vpnApps.map { it.label }.toTypedArray()
+                builder.setTitle(R.string.choose_vpn)
+                builder.setItems(labels) { _, which ->
+                    pendingLaunchPackage = packageName
+                    val intent = this.packageManager.getLaunchIntentForPackage(vpnApps[which].packageName)
+                    intent?.let { startActivity(it) }
+                }
+            }
+            else -> {
+                builder.setPositiveButton(R.string.vpn_app_not_found, null)
+            }
         }
 
         val dialog = builder.create()
         dialog.show()
 
-        if (nordvpnIntent == null) {
+        if (vpnApps.isEmpty()) {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.isEnabled = false
+        }
+    }
+
+    private fun openVpnApp() {
+        val vpnApps = vpnAppDetector.getInstalledVpnApps()
+        when {
+            vpnApps.size == 1 -> {
+                val intent = packageManager.getLaunchIntentForPackage(vpnApps[0].packageName)
+                intent?.let { startActivity(it) }
+            }
+            vpnApps.size > 1 -> {
+                val labels = vpnApps.map { it.label }.toTypedArray()
+                AlertDialog.Builder(this)
+                    .setTitle(R.string.choose_vpn)
+                    .setItems(labels) { _, which ->
+                        val intent = packageManager.getLaunchIntentForPackage(vpnApps[which].packageName)
+                        intent?.let { startActivity(it) }
+                    }
+                    .setNegativeButton(R.string.cancel, null)
+                    .show()
+            }
         }
     }
 

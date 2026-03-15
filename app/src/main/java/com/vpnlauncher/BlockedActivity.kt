@@ -4,13 +4,10 @@ import android.app.AlertDialog
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 
-/**
- * Full-screen blocking activity shown when a VPN-required app is launched
- * without an active VPN. Covers the blocked app and presents options.
- */
 class BlockedActivity : AppCompatActivity() {
 
     private lateinit var vpnChecker: VpnChecker
+    private lateinit var vpnAppDetector: VpnAppDetector
     private var blockedPackage: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -18,6 +15,7 @@ class BlockedActivity : AppCompatActivity() {
         setContentView(R.layout.activity_blocked)
 
         vpnChecker = VpnChecker(this)
+        vpnAppDetector = VpnAppDetector(this)
         blockedPackage = intent.getStringExtra("blocked_package")
 
         showBlockedDialog()
@@ -25,8 +23,6 @@ class BlockedActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-
-        // If VPN is now active, launch the blocked app
         if (vpnChecker.isVpnActive()) {
             blockedPackage?.let { pkg ->
                 val intent = packageManager.getLaunchIntentForPackage(pkg)
@@ -39,7 +35,7 @@ class BlockedActivity : AppCompatActivity() {
     }
 
     private fun showBlockedDialog() {
-        val nordvpnIntent = packageManager.getLaunchIntentForPackage("com.nordvpn.android")
+        val vpnApps = vpnAppDetector.getInstalledVpnApps()
 
         val appLabel = blockedPackage?.let { pkg ->
             try {
@@ -55,27 +51,45 @@ class BlockedActivity : AppCompatActivity() {
             .setTitle(R.string.vpn_not_connected_title)
             .setMessage(getString(R.string.vpn_blocked_app_message, appLabel))
             .setCancelable(false)
-            .setNegativeButton(R.string.go_back) { _, _ ->
-                finish()
-            }
+            .setNegativeButton(R.string.go_back) { _, _ -> finish() }
 
-        if (nordvpnIntent != null) {
-            builder.setPositiveButton(R.string.open_nordvpn) { _, _ ->
-                startActivity(nordvpnIntent)
-                // Don't finish — onResume will auto-launch the app if VPN connects
+        when {
+            vpnApps.size == 1 -> {
+                builder.setPositiveButton(getString(R.string.open_vpn, vpnApps[0].label)) { _, _ ->
+                    val intent = packageManager.getLaunchIntentForPackage(vpnApps[0].packageName)
+                    intent?.let { startActivity(it) }
+                }
             }
-        } else {
-            builder.setPositiveButton(R.string.vpn_app_not_found, null)
-            builder.setOnShowListener { dialog ->
-                (dialog as AlertDialog).getButton(AlertDialog.BUTTON_POSITIVE)?.isEnabled = false
+            vpnApps.size > 1 -> {
+                builder.setPositiveButton(R.string.choose_vpn) { _, _ ->
+                    showVpnPicker(vpnApps)
+                }
+            }
+            else -> {
+                builder.setPositiveButton(R.string.vpn_app_not_found, null)
+                builder.setOnShowListener { dialog ->
+                    (dialog as AlertDialog).getButton(AlertDialog.BUTTON_POSITIVE)?.isEnabled = false
+                }
             }
         }
 
         builder.show()
     }
 
+    private fun showVpnPicker(vpnApps: List<VpnAppDetector.VpnApp>) {
+        val labels = vpnApps.map { it.label }.toTypedArray()
+        AlertDialog.Builder(this)
+            .setTitle(R.string.choose_vpn)
+            .setItems(labels) { _, which ->
+                val intent = packageManager.getLaunchIntentForPackage(vpnApps[which].packageName)
+                intent?.let { startActivity(it) }
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    @Suppress("DEPRECATION")
     override fun onBackPressed() {
-        // Go back to home instead of the blocked app
         super.onBackPressed()
         finish()
     }

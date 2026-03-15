@@ -10,8 +10,11 @@
     <uses-feature android:name="android.software.leanback" android:required="false" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
 
+    <!-- VPN apps auto-detected via android.net.VpnService intent query -->
     <queries>
-        <package android:name="com.nordvpn.android" />
+        <intent>
+            <action android:name="android.net.VpnService" />
+        </intent>
     </queries>
 
     <application
