@@ -24,7 +24,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvRouterVpnHint: TextView
 
     private var pendingLaunchPackage: String? = null
-    private var routerVpnVerified: Boolean = false
 
     private val excludedPrefixes = listOf(
         "com.amazon.tv.",
@@ -32,11 +31,9 @@ class MainActivity : AppCompatActivity() {
         "com.android.",
     )
 
-    // System packages to always exclude from the app list
-    // (they're accessible via the quick-access bar instead)
     private val excludedPackages = setOf(
         "android",
-        "com.nordvpn.android",  // Quick access button
+        "com.nordvpn.android",
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -76,9 +73,8 @@ class MainActivity : AppCompatActivity() {
             if (checked) {
                 verifyRouterVpn()
             } else {
-                routerVpnVerified = false
                 tvRouterVpnHint.text = getString(R.string.router_vpn_hint)
-                updateVpnStatus(vpnChecker.isVpnActive())
+                refreshVpnHeader()
             }
         }
 
@@ -89,11 +85,11 @@ class MainActivity : AppCompatActivity() {
         rvAppList.layoutManager = LinearLayoutManager(this)
         rvAppList.adapter = adapter
 
-        vpnChecker.startMonitoring { isConnected ->
-            updateVpnStatus(isConnected)
+        vpnChecker.startMonitoring { _ ->
+            refreshVpnHeader()
         }
 
-        updateVpnStatus(vpnChecker.isVpnActive())
+        refreshVpnHeader()
         loadApps()
 
         if (configStore.isRouterVpnEnabled) {
@@ -104,19 +100,35 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
-        val vpnActive = isVpnEffectivelyActive()
-        updateVpnStatus(vpnActive)
+        refreshVpnHeader()
         loadApps()
+
+        // Handle pending launch from returning from NordVPN
+        val pending = pendingLaunchPackage
+        if (pending != null) {
+            pendingLaunchPackage = null
+            if (vpnChecker.isVpnActive()) {
+                // Device VPN is on — launch immediately
+                launchApp(pending)
+            } else if (configStore.isRouterVpnEnabled) {
+                // Router mode — verify IP then launch if confirmed
+                val savedPending = pending
+                ipVpnChecker.checkVpnByIp { isVpn ->
+                    if (isVpn) {
+                        launchApp(savedPending)
+                    }
+                    tvRouterVpnHint.text = getString(
+                        if (isVpn) R.string.router_vpn_verified
+                        else R.string.router_vpn_not_verified
+                    )
+                    refreshVpnHeader()
+                }
+                return
+            }
+        }
 
         if (configStore.isRouterVpnEnabled) {
             verifyRouterVpn()
-        }
-
-        pendingLaunchPackage?.let { packageName ->
-            pendingLaunchPackage = null
-            if (vpnActive) {
-                launchApp(packageName)
-            }
         }
     }
 
@@ -125,31 +137,55 @@ class MainActivity : AppCompatActivity() {
         vpnChecker.stopMonitoring()
     }
 
-    // Prevent back button from leaving the launcher
     @Suppress("DEPRECATION")
     override fun onBackPressed() {
         // Do nothing — this is the home screen
     }
 
+    /**
+     * Returns true if VPN is active at device level, or if router VPN
+     * mode is enabled (trusts the user's toggle).
+     */
     private fun isVpnEffectivelyActive(): Boolean {
         if (vpnChecker.isVpnActive()) return true
-        if (configStore.isRouterVpnEnabled && routerVpnVerified) return true
+        if (configStore.isRouterVpnEnabled) return true
         return false
     }
 
     private fun verifyRouterVpn() {
         tvRouterVpnHint.text = getString(R.string.vpn_checking)
         ipVpnChecker.checkVpnByIp { isVpn ->
-            routerVpnVerified = isVpn
-            if (isVpn) {
-                tvRouterVpnHint.text = getString(R.string.router_vpn_verified)
-                updateVpnStatus(true)
-            } else {
-                tvRouterVpnHint.text = getString(R.string.router_vpn_not_verified)
-                if (configStore.isRouterVpnEnabled) {
-                    updateVpnStatus(true)
-                }
-            }
+            tvRouterVpnHint.text = getString(
+                if (isVpn) R.string.router_vpn_verified
+                else R.string.router_vpn_not_verified
+            )
+            refreshVpnHeader()
+        }
+    }
+
+    /**
+     * Updates the VPN status header based on current state.
+     * Single source of truth — no parameters, just reads current state.
+     */
+    private fun refreshVpnHeader() {
+        val deviceVpn = vpnChecker.isVpnActive()
+        val routerVpn = configStore.isRouterVpnEnabled
+
+        if (deviceVpn) {
+            tvVpnStatus.text = getString(R.string.vpn_connected)
+            tvVpnStatus.setTextColor(getColor(R.color.vpn_connected))
+            ivVpnStatus.setImageResource(R.drawable.ic_vpn_connected)
+            ivVpnStatus.contentDescription = getString(R.string.vpn_connected)
+        } else if (routerVpn) {
+            tvVpnStatus.text = getString(R.string.vpn_connected_router)
+            tvVpnStatus.setTextColor(getColor(R.color.vpn_connected))
+            ivVpnStatus.setImageResource(R.drawable.ic_vpn_connected)
+            ivVpnStatus.contentDescription = getString(R.string.vpn_connected_router)
+        } else {
+            tvVpnStatus.text = getString(R.string.vpn_disconnected)
+            tvVpnStatus.setTextColor(getColor(R.color.vpn_disconnected))
+            ivVpnStatus.setImageResource(R.drawable.ic_vpn_disconnected)
+            ivVpnStatus.contentDescription = getString(R.string.vpn_disconnected)
         }
     }
 
@@ -225,24 +261,5 @@ class MainActivity : AppCompatActivity() {
     private fun launchApp(packageName: String) {
         val intent = packageManager.getLaunchIntentForPackage(packageName) ?: return
         startActivity(intent)
-    }
-
-    private fun updateVpnStatus(isConnected: Boolean) {
-        val effectivelyConnected = isConnected || isVpnEffectivelyActive()
-
-        if (effectivelyConnected) {
-            val isRouter = !vpnChecker.isVpnActive() && configStore.isRouterVpnEnabled
-            tvVpnStatus.text = getString(
-                if (isRouter) R.string.vpn_connected_router else R.string.vpn_connected
-            )
-            tvVpnStatus.setTextColor(getColor(R.color.vpn_connected))
-            ivVpnStatus.setImageResource(R.drawable.ic_vpn_connected)
-            ivVpnStatus.contentDescription = getString(R.string.vpn_connected)
-        } else {
-            tvVpnStatus.text = getString(R.string.vpn_disconnected)
-            tvVpnStatus.setTextColor(getColor(R.color.vpn_disconnected))
-            ivVpnStatus.setImageResource(R.drawable.ic_vpn_disconnected)
-            ivVpnStatus.contentDescription = getString(R.string.vpn_disconnected)
-        }
     }
 }

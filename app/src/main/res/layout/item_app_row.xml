@@ -18,7 +18,7 @@
         android:focusable="true"
         android:clickable="true"
         android:padding="12dp"
-        android:nextFocusRight="@+id/switchVpn">
+        android:nextFocusRight="@id/switchVpn">
 
         <ImageView
             android:id="@+id/ivAppIcon"
