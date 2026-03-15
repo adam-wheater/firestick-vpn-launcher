@@ -194,6 +194,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun requestHomeRole() {
+        // Try to self-enable the accessibility service (works if WRITE_SECURE_SETTINGS granted)
+        if (tryEnableAccessibilityService()) {
+            updateSetAsHomeVisibility()
+            AlertDialog.Builder(this)
+                .setTitle("Home Screen Enabled")
+                .setMessage("VPN Launcher is now your home screen. Pressing Home will open this app.")
+                .setPositiveButton(R.string.got_it, null)
+                .show()
+            return
+        }
+
+        // Need WRITE_SECURE_SETTINGS first — show ADB instructions
         AlertDialog.Builder(this)
             .setTitle(R.string.set_as_home)
             .setMessage(R.string.set_as_home_adb)
@@ -206,6 +218,27 @@ class MainActivity : AppCompatActivity() {
                 updateSetAsHomeVisibility()
             }
             .show()
+    }
+
+    private fun tryEnableAccessibilityService(): Boolean {
+        return try {
+            val serviceName = "com.vpnlauncher/.AppBlockerService"
+            val current = Settings.Secure.getString(
+                contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+            ) ?: ""
+
+            if (current.contains(serviceName)) return true
+
+            val newValue = if (current.isEmpty()) serviceName else "$current:$serviceName"
+            Settings.Secure.putString(
+                contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES, newValue
+            )
+            Settings.Secure.putInt(contentResolver, Settings.Secure.ACCESSIBILITY_ENABLED, 1)
+            true
+        } catch (_: SecurityException) {
+            // WRITE_SECURE_SETTINGS not granted
+            false
+        }
     }
 
     private fun updateSetAsHomeVisibility() {

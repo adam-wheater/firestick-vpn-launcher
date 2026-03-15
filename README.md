@@ -49,11 +49,20 @@ tinyurl.com/2dhccdb5
 
 3. Press Home and select VPN Launcher as your default launcher
 
-### Set as Default Home Screen
+### Set as Default Home Screen (optional)
 
-After installing, a yellow banner appears at the top: **"Set VPN Launcher as your home screen"**. Press OK and confirm the system dialog. VPN Launcher becomes your home screen — it starts automatically on every boot.
+Fire OS doesn't allow changing the home launcher without a one-time ADB command. This is the same requirement as Wolf Launcher, Projectivy, and every other custom Fire TV launcher.
 
-If Fire OS resets the default after an update, the banner reappears automatically.
+From a computer on the same WiFi network:
+
+```bash
+adb connect <fire-stick-ip>:5555
+adb shell pm grant com.vpnlauncher android.permission.WRITE_SECURE_SETTINGS
+```
+
+Then open VPN Launcher and press the yellow setup banner — it will activate automatically. Pressing Home now opens VPN Launcher, and it auto-starts on boot.
+
+**Without this step**, VPN Launcher still works perfectly — just open it from your apps list. VPN blocking works either way.
 
 ### Update
 

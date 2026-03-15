@@ -27,7 +27,7 @@
     <string name="vpn">VPN</string>
     <string name="edit_mode_hint">Moving app — use D-pad to reposition, press OK to drop. Menu button toggles VPN requirement.</string>
     <string name="set_as_home">Make VPN Launcher your home screen — press OK for setup</string>
-    <string name="set_as_home_adb">To make VPN Launcher your home screen, run this once from a computer on the same network:\n\nadb connect YOUR_IP:5555\nadb shell settings put secure enabled_accessibility_services com.vpnlauncher/.AppBlockerService\n\nYour Fire Stick IP: Settings \u2192 My Fire TV \u2192 About \u2192 Network\n\nEnable ADB: Settings \u2192 My Fire TV \u2192 Developer Options \u2192 ADB Debugging \u2192 ON\n\nAfter running the command, pressing Home will open VPN Launcher. It also auto-starts on boot.\n\nWithout this setup, VPN Launcher still works — just open it from your apps list.</string>
+    <string name="set_as_home_adb">To make VPN Launcher your home screen, run this once from a computer on the same network:\n\nadb connect YOUR_IP:5555\nadb shell pm grant com.vpnlauncher android.permission.WRITE_SECURE_SETTINGS\n\nThen come back here and press this button again — it will activate automatically.\n\nYour Fire Stick IP: Settings \u2192 My Fire TV \u2192 About \u2192 Network\n\nEnable ADB: Settings \u2192 My Fire TV \u2192 Developer Options \u2192 ADB Debugging \u2192 ON\n\nWithout this setup, VPN Launcher still works — just open it from your apps list.</string>
     <string name="got_it">Got It</string>
     <string name="skip">Skip</string>
     <string name="dismiss">Dismiss</string>
