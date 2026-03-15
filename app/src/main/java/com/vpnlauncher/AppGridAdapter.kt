@@ -12,8 +12,17 @@ class AppGridAdapter(
     private var apps: MutableList<AppInfo>,
     private val configStore: AppConfigStore,
     private val onAppClicked: (AppInfo) -> Unit,
-    private val onAppLongClicked: (Int) -> Unit
+    private val onAppLongClicked: (Int) -> Unit,
+    private val onEditModeMove: (from: Int, direction: Int) -> Unit,
+    private val onEditModeDrop: () -> Unit
 ) : RecyclerView.Adapter<AppGridAdapter.ViewHolder>() {
+
+    companion object {
+        const val MOVE_LEFT = 0
+        const val MOVE_RIGHT = 1
+        const val MOVE_UP = 2
+        const val MOVE_DOWN = 3
+    }
 
     var editModePosition: Int = -1
         set(value) {
@@ -57,41 +66,60 @@ class AppGridAdapter(
             holder.appCell.scaleY = 1.0f
         }
 
+        // Normal click = launch app (or drop in edit mode)
         holder.appCell.setOnClickListener {
             if (isInEditMode) {
-                // Drop the app in edit mode
-                editModePosition = -1
+                onEditModeDrop()
             } else {
                 onAppClicked(app)
             }
         }
 
+        // Long click = enter edit mode
         holder.appCell.setOnLongClickListener {
             onAppLongClicked(holder.adapterPosition)
             true
         }
 
+        // Key listener: only intercept D-pad in edit mode + menu button always
         holder.appCell.setOnKeyListener { _, keyCode, event ->
-            if (event.action != KeyEvent.ACTION_UP) return@setOnKeyListener false
+            if (event.action != KeyEvent.ACTION_DOWN) return@setOnKeyListener false
 
-            when (keyCode) {
-                KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
-                    if (isInEditMode) {
-                        editModePosition = -1
-                    } else {
-                        onAppClicked(app)
-                    }
-                    true
-                }
-                KeyEvent.KEYCODE_MENU -> {
-                    // Long-press alternative: menu button toggles VPN requirement
-                    val newState = !configStore.isVpnRequired(app.packageName)
-                    configStore.setVpnRequired(app.packageName, newState)
-                    notifyItemChanged(holder.adapterPosition)
-                    true
-                }
-                else -> false
+            // Menu button always toggles VPN requirement
+            if (keyCode == KeyEvent.KEYCODE_MENU) {
+                val newState = !configStore.isVpnRequired(app.packageName)
+                configStore.setVpnRequired(app.packageName, newState)
+                notifyItemChanged(holder.adapterPosition)
+                return@setOnKeyListener true
             }
+
+            // In edit mode, intercept D-pad to move the app
+            if (isInEditMode && holder.adapterPosition == editModePosition) {
+                when (keyCode) {
+                    KeyEvent.KEYCODE_DPAD_LEFT -> {
+                        onEditModeMove(editModePosition, MOVE_LEFT)
+                        return@setOnKeyListener true
+                    }
+                    KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                        onEditModeMove(editModePosition, MOVE_RIGHT)
+                        return@setOnKeyListener true
+                    }
+                    KeyEvent.KEYCODE_DPAD_UP -> {
+                        onEditModeMove(editModePosition, MOVE_UP)
+                        return@setOnKeyListener true
+                    }
+                    KeyEvent.KEYCODE_DPAD_DOWN -> {
+                        onEditModeMove(editModePosition, MOVE_DOWN)
+                        return@setOnKeyListener true
+                    }
+                    KeyEvent.KEYCODE_BACK -> {
+                        onEditModeDrop()
+                        return@setOnKeyListener true
+                    }
+                }
+            }
+
+            false
         }
     }
 

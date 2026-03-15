@@ -4,7 +4,6 @@ import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
-import android.view.KeyEvent
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
@@ -85,20 +84,13 @@ class MainActivity : AppCompatActivity() {
             apps = mutableListOf(),
             configStore = configStore,
             onAppClicked = { app -> onAppClicked(app) },
-            onAppLongClicked = { position -> enterEditMode(position) }
+            onAppLongClicked = { position -> enterEditMode(position) },
+            onEditModeMove = { from, direction -> handleEditModeMove(from, direction) },
+            onEditModeDrop = { exitEditMode() }
         )
 
         rvAppGrid.layoutManager = GridLayoutManager(this, 4)
         rvAppGrid.adapter = adapter
-
-        // Handle D-pad movement in edit mode
-        rvAppGrid.addOnItemTouchListener(object : RecyclerView.SimpleOnItemTouchListener() {})
-        rvAppGrid.setOnKeyListener { _, keyCode, event ->
-            if (!adapter.isInEditMode || event.action != KeyEvent.ACTION_UP) {
-                return@setOnKeyListener false
-            }
-            handleEditModeKey(keyCode)
-        }
 
         vpnChecker.startMonitoring { _ -> refreshVpnHeader() }
 
@@ -156,32 +148,20 @@ class MainActivity : AppCompatActivity() {
         configStore.saveAppOrder(adapter.getAppOrder())
     }
 
-    private fun handleEditModeKey(keyCode: Int): Boolean {
-        val pos = adapter.editModePosition
-        if (pos < 0) return false
+    private fun handleEditModeMove(from: Int, direction: Int) {
         val columns = 4
-
-        val newPos = when (keyCode) {
-            KeyEvent.KEYCODE_DPAD_LEFT -> if (pos > 0) pos - 1 else pos
-            KeyEvent.KEYCODE_DPAD_RIGHT -> if (pos < adapter.itemCount - 1) pos + 1 else pos
-            KeyEvent.KEYCODE_DPAD_UP -> if (pos >= columns) pos - columns else pos
-            KeyEvent.KEYCODE_DPAD_DOWN -> if (pos + columns < adapter.itemCount) pos + columns else pos
-            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
-                exitEditMode()
-                return true
-            }
-            KeyEvent.KEYCODE_BACK -> {
-                exitEditMode()
-                return true
-            }
-            else -> return false
+        val newPos = when (direction) {
+            AppGridAdapter.MOVE_LEFT -> if (from > 0) from - 1 else from
+            AppGridAdapter.MOVE_RIGHT -> if (from < adapter.itemCount - 1) from + 1 else from
+            AppGridAdapter.MOVE_UP -> if (from >= columns) from - columns else from
+            AppGridAdapter.MOVE_DOWN -> if (from + columns < adapter.itemCount) from + columns else from
+            else -> from
         }
 
-        if (newPos != pos) {
-            adapter.moveApp(pos, newPos)
+        if (newPos != from) {
+            adapter.moveApp(from, newPos)
             rvAppGrid.scrollToPosition(newPos)
         }
-        return true
     }
 
     // --- VPN logic ---
