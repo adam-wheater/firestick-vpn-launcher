@@ -179,35 +179,26 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun requestHomeRole() {
-        // Find the current default home launcher
-        val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
-        val currentHome = packageManager.resolveActivity(homeIntent, PackageManager.MATCH_DEFAULT_ONLY)
-        val homePkg = currentHome?.activityInfo?.packageName
-
-        if (homePkg != null && homePkg != packageName) {
-            // Show instructions and open the current launcher's app settings
-            AlertDialog.Builder(this)
-                .setTitle(R.string.set_as_home)
-                .setMessage(getString(R.string.set_as_home_instructions, homePkg))
-                .setPositiveButton(R.string.open_app_settings) { _, _ ->
+        AlertDialog.Builder(this)
+            .setTitle(R.string.set_as_home)
+            .setMessage(R.string.set_as_home_fire_os)
+            .setPositiveButton(R.string.open_app_settings) { _, _ ->
+                // Open the Amazon launcher's app info — user needs "Clear defaults"
+                try {
+                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                    intent.data = android.net.Uri.parse("package:com.amazon.tv.launcher")
+                    startActivity(intent)
+                } catch (_: Exception) {
                     try {
-                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                        intent.data = android.net.Uri.parse("package:$homePkg")
-                        startActivity(intent)
+                        // Fallback: open all apps management
+                        startActivity(Intent(Settings.ACTION_MANAGE_ALL_APPLICATIONS_SETTINGS))
                     } catch (_: Exception) {
                         startActivity(Intent(Settings.ACTION_SETTINGS))
                     }
                 }
-                .setNegativeButton(R.string.cancel, null)
-                .show()
-        } else {
-            // No default set or we're already default — open general settings
-            try {
-                startActivity(Intent(Settings.ACTION_HOME_SETTINGS))
-            } catch (_: Exception) {
-                startActivity(Intent(Settings.ACTION_SETTINGS))
             }
-        }
+            .setNeutralButton(R.string.skip, null)
+            .show()
     }
 
     private fun updateSetAsHomeVisibility() {
