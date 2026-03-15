@@ -49,16 +49,11 @@ tinyurl.com/2dhccdb5
 
 3. Press Home and select VPN Launcher as your default launcher
 
-### Make It Permanent (survives reboot)
+### Set as Default Home Screen
 
-Fire OS may reset the default launcher on reboot. To force VPN Launcher as permanent default, run this once from your computer:
+After installing, a yellow banner appears at the top: **"Set VPN Launcher as your home screen"**. Press OK and confirm the system dialog. VPN Launcher becomes your home screen — it starts automatically on every boot.
 
-```bash
-adb connect <fire-stick-ip>:5555
-adb shell cmd package set-home-activity com.vpnlauncher/.MainActivity
-```
-
-This makes VPN Launcher the system home launcher — it starts automatically on every boot.
+If Fire OS resets the default after an update, the banner reappears automatically.
 
 ### Update
 

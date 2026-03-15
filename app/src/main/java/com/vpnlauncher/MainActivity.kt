@@ -1,12 +1,17 @@
 package com.vpnlauncher
 
 import android.app.AlertDialog
+import android.app.role.RoleManager
+import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.provider.Settings
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -25,6 +30,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnRouterVpn: TextView
 
     private var pendingLaunchPackage: String? = null
+
+    private val homeRoleLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) {
+        // After the user responds to the "set as home" dialog, refresh UI
+        updateSetAsHomeVisibility()
+    }
 
     private val excludedPrefixes = listOf(
         "com.amazon.tv.",
@@ -79,6 +91,12 @@ class MainActivity : AppCompatActivity() {
             refreshVpnHeader()
         }
 
+        // Set as Home button
+        findViewById<TextView>(R.id.btnSetHome).setOnClickListener {
+            requestHomeRole()
+        }
+        updateSetAsHomeVisibility()
+
         // Grid adapter with reorder support
         adapter = AppGridAdapter(
             apps = mutableListOf(),
@@ -106,6 +124,7 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         refreshVpnHeader()
         updateRouterVpnButton()
+        updateSetAsHomeVisibility()
         loadApps()
 
         val pending = pendingLaunchPackage
@@ -132,6 +151,40 @@ class MainActivity : AppCompatActivity() {
             exitEditMode()
         }
         // Otherwise do nothing — this is the home screen
+    }
+
+    // --- Default home launcher ---
+
+    private fun isDefaultHome(): Boolean {
+        val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+        val resolveInfo = packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
+        return resolveInfo?.activityInfo?.packageName == packageName
+    }
+
+    private fun requestHomeRole() {
+        try {
+            val roleManager = getSystemService(Context.ROLE_SERVICE) as RoleManager
+            if (!roleManager.isRoleHeld(RoleManager.ROLE_HOME)) {
+                val intent = roleManager.createRequestRoleIntent(RoleManager.ROLE_HOME)
+                homeRoleLauncher.launch(intent)
+            }
+        } catch (e: Exception) {
+            // Fallback: open home settings
+            try {
+                startActivity(Intent(Settings.ACTION_HOME_SETTINGS))
+            } catch (e2: Exception) {
+                startActivity(Intent(Settings.ACTION_SETTINGS))
+            }
+        }
+    }
+
+    private fun updateSetAsHomeVisibility() {
+        val btnSetHome = findViewById<TextView>(R.id.btnSetHome)
+        if (isDefaultHome()) {
+            btnSetHome.visibility = View.GONE
+        } else {
+            btnSetHome.visibility = View.VISIBLE
+        }
     }
 
     // --- Edit mode (long-press reorder) ---

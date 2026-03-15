@@ -26,4 +26,5 @@
     <string name="app_store">Appstore</string>
     <string name="vpn">VPN</string>
     <string name="edit_mode_hint">Moving app — use D-pad to reposition, press OK to drop. Menu button toggles VPN requirement.</string>
+    <string name="set_as_home">Set VPN Launcher as your home screen — press OK</string>
 </resources>

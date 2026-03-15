@@ -51,6 +51,22 @@
         </LinearLayout>
     </RelativeLayout>
 
+    <!-- Set as Home banner (hidden when already default) -->
+    <TextView
+        android:id="@+id/btnSetHome"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/set_as_home"
+        android:textColor="@color/shield_icon"
+        android:textSize="14sp"
+        android:gravity="center"
+        android:padding="10dp"
+        android:background="@color/surface"
+        android:focusable="true"
+        android:clickable="true"
+        android:layout_marginBottom="6dp"
+        android:visibility="gone" />
+
     <!-- Quick access bar -->
     <LinearLayout
         android:layout_width="match_parent"
