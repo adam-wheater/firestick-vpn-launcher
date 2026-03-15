@@ -11,13 +11,23 @@ android {
         applicationId = "com.vpnlauncher"
         minSdk = 28
         targetSdk = 33
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
+    }
+
+    signingConfigs {
+        create("release") {
+            storeFile = file("release.keystore")
+            storePassword = "vpnlauncher"
+            keyAlias = "vpnlauncher"
+            keyPassword = "vpnlauncher"
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 

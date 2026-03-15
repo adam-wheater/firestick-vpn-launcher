@@ -26,11 +26,20 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
+      - name: Generate signing keystore
+        run: |
+          keytool -genkeypair -v \
+            -keystore app/release.keystore \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -alias vpnlauncher \
+            -storepass vpnlauncher -keypass vpnlauncher \
+            -dname "CN=VPN Launcher, O=vpnlauncher, C=GB"
+
       - name: Build Release APK
         run: ./gradlew assembleRelease
 
       - name: Rename APK
-        run: cp app/build/outputs/apk/release/app-release-unsigned.apk vpn-launcher.apk
+        run: cp app/build/outputs/apk/release/app-release.apk vpn-launcher.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
