@@ -4,7 +4,9 @@ import android.app.AlertDialog
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.ImageView
+import android.widget.Switch
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -12,13 +14,17 @@ import androidx.recyclerview.widget.RecyclerView
 class MainActivity : AppCompatActivity() {
 
     private lateinit var vpnChecker: VpnChecker
+    private lateinit var ipVpnChecker: IpVpnChecker
     private lateinit var configStore: AppConfigStore
     private lateinit var adapter: AppListAdapter
     private lateinit var tvVpnStatus: TextView
     private lateinit var ivVpnStatus: ImageView
     private lateinit var rvAppList: RecyclerView
+    private lateinit var switchRouterVpn: Switch
+    private lateinit var tvRouterVpnHint: TextView
 
     private var pendingLaunchPackage: String? = null
+    private var routerVpnVerified: Boolean = false
 
     private val excludedPrefixes = listOf(
         "com.amazon.tv.",
@@ -31,11 +37,27 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         vpnChecker = VpnChecker(this)
+        ipVpnChecker = IpVpnChecker()
         configStore = AppConfigStore(this)
 
         tvVpnStatus = findViewById(R.id.tvVpnStatus)
         ivVpnStatus = findViewById(R.id.ivVpnStatus)
         rvAppList = findViewById(R.id.rvAppList)
+        switchRouterVpn = findViewById(R.id.switchRouterVpn)
+        tvRouterVpnHint = findViewById(R.id.tvRouterVpnHint)
+
+        // Router VPN toggle
+        switchRouterVpn.isChecked = configStore.isRouterVpnEnabled
+        switchRouterVpn.setOnCheckedChangeListener { _, checked ->
+            configStore.isRouterVpnEnabled = checked
+            if (checked) {
+                verifyRouterVpn()
+            } else {
+                routerVpnVerified = false
+                tvRouterVpnHint.text = getString(R.string.router_vpn_hint)
+                updateVpnStatus(vpnChecker.isVpnActive())
+            }
+        }
 
         adapter = AppListAdapter(emptyList(), configStore) { app ->
             onAppClicked(app)
@@ -50,14 +72,24 @@ class MainActivity : AppCompatActivity() {
 
         updateVpnStatus(vpnChecker.isVpnActive())
         loadApps()
+
+        // If router VPN mode is already on, verify on startup
+        if (configStore.isRouterVpnEnabled) {
+            verifyRouterVpn()
+        }
     }
 
     override fun onResume() {
         super.onResume()
 
-        val vpnActive = vpnChecker.isVpnActive()
+        val vpnActive = isVpnEffectivelyActive()
         updateVpnStatus(vpnActive)
         loadApps()
+
+        // Re-verify router VPN on resume (network may have changed)
+        if (configStore.isRouterVpnEnabled) {
+            verifyRouterVpn()
+        }
 
         pendingLaunchPackage?.let { packageName ->
             pendingLaunchPackage = null
@@ -70,6 +102,33 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         vpnChecker.stopMonitoring()
+    }
+
+    /**
+     * Returns true if VPN is active either at device level or router level (verified).
+     */
+    private fun isVpnEffectivelyActive(): Boolean {
+        if (vpnChecker.isVpnActive()) return true
+        if (configStore.isRouterVpnEnabled && routerVpnVerified) return true
+        return false
+    }
+
+    private fun verifyRouterVpn() {
+        tvRouterVpnHint.text = getString(R.string.vpn_checking)
+        ipVpnChecker.checkVpnByIp { isVpn ->
+            routerVpnVerified = isVpn
+            if (isVpn) {
+                tvRouterVpnHint.text = getString(R.string.router_vpn_verified)
+                updateVpnStatus(true)
+            } else {
+                tvRouterVpnHint.text = getString(R.string.router_vpn_not_verified)
+                // Still allow the toggle — the IP check is best-effort
+                // The user's toggle is the primary signal
+                if (configStore.isRouterVpnEnabled) {
+                    updateVpnStatus(true)
+                }
+            }
+        }
     }
 
     private fun loadApps() {
@@ -104,7 +163,14 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        if (vpnChecker.isVpnActive()) {
+        if (isVpnEffectivelyActive()) {
+            launchApp(app.packageName)
+            return
+        }
+
+        // Router VPN enabled but not verified — still allow with warning
+        if (configStore.isRouterVpnEnabled) {
+            Toast.makeText(this, R.string.router_vpn_not_verified, Toast.LENGTH_SHORT).show()
             launchApp(app.packageName)
             return
         }
@@ -143,8 +209,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateVpnStatus(isConnected: Boolean) {
-        if (isConnected) {
-            tvVpnStatus.text = getString(R.string.vpn_connected)
+        val effectivelyConnected = isConnected || isVpnEffectivelyActive()
+
+        if (effectivelyConnected) {
+            val isRouter = !vpnChecker.isVpnActive() && configStore.isRouterVpnEnabled
+            tvVpnStatus.text = getString(
+                if (isRouter) R.string.vpn_connected_router else R.string.vpn_connected
+            )
             tvVpnStatus.setTextColor(getColor(R.color.vpn_connected))
             ivVpnStatus.setImageResource(R.drawable.ic_vpn_connected)
             ivVpnStatus.contentDescription = getString(R.string.vpn_connected)

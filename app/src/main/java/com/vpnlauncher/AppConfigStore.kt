@@ -9,6 +9,7 @@ class AppConfigStore(context: Context) {
         context.getSharedPreferences("vpn_launcher_prefs", Context.MODE_PRIVATE)
 
     private val key = "vpn_required_packages"
+    private val routerVpnKey = "router_vpn_enabled"
 
     fun isVpnRequired(packageName: String): Boolean {
         return getVpnRequiredPackages().contains(packageName)
@@ -27,4 +28,8 @@ class AppConfigStore(context: Context) {
     fun getVpnRequiredPackages(): Set<String> {
         return prefs.getStringSet(key, emptySet()) ?: emptySet()
     }
+
+    var isRouterVpnEnabled: Boolean
+        get() = prefs.getBoolean(routerVpnKey, false)
+        set(value) = prefs.edit().putBoolean(routerVpnKey, value).apply()
 }

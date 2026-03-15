@@ -3,10 +3,16 @@
     <string name="app_name">VPN Launcher</string>
     <string name="vpn_connected">VPN Connected</string>
     <string name="vpn_disconnected">VPN Disconnected</string>
+    <string name="vpn_connected_router">VPN Connected (Router)</string>
+    <string name="vpn_checking">Checking VPN…</string>
     <string name="vpn_not_connected_title">VPN is not connected</string>
     <string name="vpn_not_connected_message">This app requires a VPN connection to launch.</string>
     <string name="open_nordvpn">Open NordVPN</string>
     <string name="cancel">Cancel</string>
     <string name="vpn_app_not_found">VPN app not found</string>
     <string name="vpn_required">VPN required</string>
+    <string name="router_vpn_label">Router VPN Mode</string>
+    <string name="router_vpn_hint">Enable if your router handles VPN (verified via IP check)</string>
+    <string name="router_vpn_verified">Router VPN verified</string>
+    <string name="router_vpn_not_verified">Router VPN not verified — IP check failed</string>
 </resources>
