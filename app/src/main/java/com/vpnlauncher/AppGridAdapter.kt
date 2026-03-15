@@ -107,33 +107,36 @@ class AppGridAdapter(
         }
 
         holder.appCell.setOnKeyListener { _, keyCode, event ->
-            if (event.action != KeyEvent.ACTION_DOWN) return@setOnKeyListener false
-
-            when (keyCode) {
-                KeyEvent.KEYCODE_MENU -> {
-                    // Menu button: cycle through states
-                    // No VPN + visible -> VPN required
-                    // VPN required -> Hidden
-                    // Hidden -> No VPN + visible
-                    if (isHidden) {
-                        configStore.setHidden(app.packageName, false)
-                    } else if (isVpnRequired) {
-                        configStore.setVpnRequired(app.packageName, false)
-                        configStore.setHidden(app.packageName, true)
-                    } else {
-                        configStore.setVpnRequired(app.packageName, true)
-                    }
-                    notifyItemChanged(holder.adapterPosition)
-                    true
+            // Menu button: cycle VPN/hidden states
+            if (keyCode == KeyEvent.KEYCODE_MENU && event.action == KeyEvent.ACTION_DOWN) {
+                val currentVpn = configStore.isVpnRequired(app.packageName)
+                val currentHidden = configStore.isHidden(app.packageName)
+                if (currentHidden) {
+                    configStore.setHidden(app.packageName, false)
+                } else if (currentVpn) {
+                    configStore.setVpnRequired(app.packageName, false)
+                    configStore.setHidden(app.packageName, true)
+                } else {
+                    configStore.setVpnRequired(app.packageName, true)
                 }
-                else -> {
-                    if (isInEditMode && holder.adapterPosition == editModePosition) {
-                        handleEditModeKey(keyCode)
-                    } else {
-                        false
-                    }
-                }
+                notifyItemChanged(holder.adapterPosition)
+                return@setOnKeyListener true
             }
+
+            // Long-press center: enter edit mode (detect via repeat count)
+            if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER && event.action == KeyEvent.ACTION_DOWN
+                && event.repeatCount > 0 && !isInEditMode) {
+                onAppLongClicked(holder.adapterPosition)
+                return@setOnKeyListener true
+            }
+
+            // Edit mode: D-pad moves the app
+            if (isInEditMode && holder.adapterPosition == editModePosition
+                && event.action == KeyEvent.ACTION_DOWN) {
+                return@setOnKeyListener handleEditModeKey(keyCode)
+            }
+
+            false
         }
     }
 
