@@ -1,7 +1,12 @@
 package com.vpnlauncher
 
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.app.AlertDialog
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
+import android.provider.Settings
+import android.view.accessibility.AccessibilityManager
 import android.widget.ImageView
 import android.widget.Switch
 import android.widget.TextView
@@ -20,6 +25,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var rvAppList: RecyclerView
     private lateinit var switchRouterVpn: Switch
     private lateinit var tvRouterVpnHint: TextView
+    private lateinit var tvServiceStatus: TextView
 
     private var pendingLaunchPackage: String? = null
     private var routerVpnVerified: Boolean = false
@@ -43,6 +49,14 @@ class MainActivity : AppCompatActivity() {
         rvAppList = findViewById(R.id.rvAppList)
         switchRouterVpn = findViewById(R.id.switchRouterVpn)
         tvRouterVpnHint = findViewById(R.id.tvRouterVpnHint)
+        tvServiceStatus = findViewById(R.id.tvServiceStatus)
+
+        // Service status banner — click to enable
+        tvServiceStatus.setOnClickListener {
+            if (!isAccessibilityServiceEnabled()) {
+                showEnableServiceDialog()
+            }
+        }
 
         // Router VPN toggle
         switchRouterVpn.isChecked = configStore.isRouterVpnEnabled
@@ -71,9 +85,13 @@ class MainActivity : AppCompatActivity() {
         updateVpnStatus(vpnChecker.isVpnActive())
         loadApps()
 
-        // If router VPN mode is already on, verify on startup
         if (configStore.isRouterVpnEnabled) {
             verifyRouterVpn()
+        }
+
+        // Prompt to enable accessibility service on first launch
+        if (!isAccessibilityServiceEnabled()) {
+            showEnableServiceDialog()
         }
     }
 
@@ -82,9 +100,9 @@ class MainActivity : AppCompatActivity() {
 
         val vpnActive = isVpnEffectivelyActive()
         updateVpnStatus(vpnActive)
+        updateServiceStatus()
         loadApps()
 
-        // Re-verify router VPN on resume (network may have changed)
         if (configStore.isRouterVpnEnabled) {
             verifyRouterVpn()
         }
@@ -102,9 +120,37 @@ class MainActivity : AppCompatActivity() {
         vpnChecker.stopMonitoring()
     }
 
-    /**
-     * Returns true if VPN is active either at device level or router level (verified).
-     */
+    private fun isAccessibilityServiceEnabled(): Boolean {
+        val am = getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
+        val enabledServices = am.getEnabledAccessibilityServiceList(
+            AccessibilityServiceInfo.FEEDBACK_GENERIC
+        )
+        return enabledServices.any {
+            it.resolveInfo.serviceInfo.packageName == packageName
+        }
+    }
+
+    private fun updateServiceStatus() {
+        if (isAccessibilityServiceEnabled()) {
+            tvServiceStatus.text = getString(R.string.service_enabled)
+            tvServiceStatus.setTextColor(getColor(R.color.vpn_connected))
+        } else {
+            tvServiceStatus.text = getString(R.string.service_disabled)
+            tvServiceStatus.setTextColor(getColor(R.color.vpn_disconnected))
+        }
+    }
+
+    private fun showEnableServiceDialog() {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.enable_service_title)
+            .setMessage(R.string.enable_service_message)
+            .setPositiveButton(R.string.open_settings) { _, _ ->
+                startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
     private fun isVpnEffectivelyActive(): Boolean {
         if (vpnChecker.isVpnActive()) return true
         if (configStore.isRouterVpnEnabled && routerVpnVerified) return true
@@ -120,8 +166,6 @@ class MainActivity : AppCompatActivity() {
                 updateVpnStatus(true)
             } else {
                 tvRouterVpnHint.text = getString(R.string.router_vpn_not_verified)
-                // Still allow the toggle — the IP check is best-effort
-                // The user's toggle is the primary signal
                 if (configStore.isRouterVpnEnabled) {
                     updateVpnStatus(true)
                 }
@@ -167,7 +211,6 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // VPN required but not active — block and show dialog
         showVpnBlockedDialog(app.packageName)
     }
 

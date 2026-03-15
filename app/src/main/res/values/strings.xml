@@ -7,12 +7,20 @@
     <string name="vpn_checking">Checking VPN…</string>
     <string name="vpn_not_connected_title">VPN is not connected</string>
     <string name="vpn_not_connected_message">This app requires a VPN connection to launch.</string>
+    <string name="vpn_blocked_app_message">%1$s requires a VPN connection. Please connect your VPN first.</string>
     <string name="open_nordvpn">Open NordVPN</string>
     <string name="cancel">Cancel</string>
+    <string name="go_back">Go Back</string>
     <string name="vpn_app_not_found">VPN app not found</string>
     <string name="vpn_required">VPN required</string>
     <string name="router_vpn_label">Router VPN Mode</string>
     <string name="router_vpn_hint">Enable if your router handles VPN (verified via IP check)</string>
     <string name="router_vpn_verified">Router VPN verified</string>
     <string name="router_vpn_not_verified">Router VPN not verified — IP check failed</string>
+    <string name="accessibility_service_description">VPN Launcher monitors which apps are opened and blocks VPN-required apps when VPN is not connected.</string>
+    <string name="enable_service_title">Enable App Blocker</string>
+    <string name="enable_service_message">To block apps system-wide, VPN Launcher needs Accessibility Service permission.\n\nGo to: Settings → Accessibility → VPN Launcher → ON</string>
+    <string name="open_settings">Open Settings</string>
+    <string name="service_enabled">App blocker is active</string>
+    <string name="service_disabled">App blocker is not active — tap to enable</string>
 </resources>

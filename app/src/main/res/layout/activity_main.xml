@@ -49,6 +49,21 @@
         </LinearLayout>
     </RelativeLayout>
 
+    <!-- Service status banner -->
+    <TextView
+        android:id="@+id/tvServiceStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/service_disabled"
+        android:textColor="@color/vpn_disconnected"
+        android:textSize="14sp"
+        android:padding="10dp"
+        android:gravity="center"
+        android:background="@color/surface"
+        android:focusable="true"
+        android:clickable="true"
+        android:layout_marginBottom="8dp" />
+
     <!-- Router VPN toggle -->
     <LinearLayout
         android:layout_width="match_parent"
