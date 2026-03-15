@@ -196,15 +196,15 @@ class MainActivity : AppCompatActivity() {
     private fun requestHomeRole() {
         AlertDialog.Builder(this)
             .setTitle(R.string.set_as_home)
-            .setMessage(R.string.set_as_home_accessibility)
-            .setPositiveButton(R.string.open_accessibility_settings) { _, _ ->
-                try {
-                    startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-                } catch (_: Exception) {
-                    startActivity(Intent(Settings.ACTION_SETTINGS))
-                }
+            .setMessage(R.string.set_as_home_adb)
+            .setPositiveButton(R.string.got_it) { _, _ ->
+                configStore.isBannerDismissed = true
+                updateSetAsHomeVisibility()
             }
-            .setNeutralButton(R.string.skip, null)
+            .setNegativeButton(R.string.dismiss) { _, _ ->
+                configStore.isBannerDismissed = true
+                updateSetAsHomeVisibility()
+            }
             .show()
     }
 
