@@ -43,6 +43,7 @@ class AppGridAdapter(
         val ivAppIcon: ImageView = view.findViewById(R.id.ivAppIcon)
         val tvAppName: TextView = view.findViewById(R.id.tvAppName)
         val ivShield: ImageView = view.findViewById(R.id.ivShield)
+        val ivHidden: ImageView = view.findViewById(R.id.ivHidden)
     }
 
     override fun getItemViewType(position: Int): Int {
@@ -68,10 +69,19 @@ class AppGridAdapter(
 
         holder.ivAppIcon.setImageDrawable(app.icon)
         holder.tvAppName.text = app.label
-        holder.ivShield.visibility = if (isVpnRequired) View.VISIBLE else View.GONE
 
-        // Dim hidden apps when showing them
-        holder.appCell.alpha = if (isHidden && showingHidden) 0.4f else 1.0f
+        // Badge icons: shield for VPN, eye-off for hidden (mutually exclusive position)
+        holder.ivShield.visibility = if (isVpnRequired && !isHidden) View.VISIBLE else View.GONE
+        holder.ivHidden.visibility = if (isHidden) View.VISIBLE else View.GONE
+
+        // Dim hidden apps + dim icon when showing them
+        if (isHidden && showingHidden) {
+            holder.appCell.alpha = 0.4f
+            holder.ivAppIcon.alpha = 0.4f
+        } else {
+            holder.appCell.alpha = 1.0f
+            holder.ivAppIcon.alpha = 1.0f
+        }
 
         // Edit mode visual indicator
         if (position == editModePosition) {
@@ -128,11 +138,11 @@ class AppGridAdapter(
     }
 
     private fun bindToggleHiddenTile(holder: ViewHolder) {
-        holder.ivAppIcon.setImageResource(
-            if (showingHidden) R.drawable.ic_vpn_connected else R.drawable.ic_vpn_disconnected
-        )
+        holder.ivAppIcon.setImageResource(R.drawable.ic_hidden)
+        holder.ivAppIcon.alpha = if (showingHidden) 1.0f else 0.5f
         holder.tvAppName.text = if (showingHidden) "Hide Hidden" else "Show Hidden"
         holder.ivShield.visibility = View.GONE
+        holder.ivHidden.visibility = View.GONE
         holder.appCell.alpha = 0.7f
         holder.appCell.scaleX = 1.0f
         holder.appCell.scaleY = 1.0f

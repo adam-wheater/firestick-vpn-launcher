@@ -29,6 +29,15 @@
             android:src="@drawable/ic_shield"
             android:visibility="gone"
             android:contentDescription="@string/vpn_required" />
+
+        <ImageView
+            android:id="@+id/ivHidden"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_gravity="top|end"
+            android:src="@drawable/ic_hidden"
+            android:visibility="gone"
+            android:contentDescription="Hidden" />
     </FrameLayout>
 
     <TextView
