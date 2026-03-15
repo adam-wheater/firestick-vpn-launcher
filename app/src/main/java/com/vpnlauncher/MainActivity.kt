@@ -1,8 +1,6 @@
 package com.vpnlauncher
 
 import android.app.AlertDialog
-import android.app.role.RoleManager
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -12,7 +10,6 @@ import android.provider.Settings
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -38,12 +35,6 @@ class MainActivity : AppCompatActivity() {
     private val clockHandler = Handler(Looper.getMainLooper())
     private val clockFormat = SimpleDateFormat("EEE d MMM  HH:mm", Locale.getDefault())
 
-    private val homeRoleLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) {
-        // After the user responds to the "set as home" dialog, refresh UI
-        updateSetAsHomeVisibility()
-    }
 
     private val excludedPrefixes = listOf(
         "com.amazon.tv.",
@@ -188,45 +179,34 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun requestHomeRole() {
-        // Try multiple approaches — Fire OS doesn't support all standard Android APIs
+        // Find the current default home launcher
+        val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+        val currentHome = packageManager.resolveActivity(homeIntent, PackageManager.MATCH_DEFAULT_ONLY)
+        val homePkg = currentHome?.activityInfo?.packageName
 
-        // Approach 1: RoleManager (stock Android 10+)
-        try {
-            val roleManager = getSystemService(Context.ROLE_SERVICE) as? RoleManager
-            if (roleManager != null && !roleManager.isRoleHeld(RoleManager.ROLE_HOME)) {
-                val intent = roleManager.createRequestRoleIntent(RoleManager.ROLE_HOME)
-                homeRoleLauncher.launch(intent)
-                return
-            }
-        } catch (_: Exception) {}
-
-        // Approach 2: Open the current home app's "App Info" so user can "Clear Defaults"
-        // Then pressing Home will trigger the chooser
-        try {
-            val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
-            val currentHome = packageManager.resolveActivity(homeIntent, PackageManager.MATCH_DEFAULT_ONLY)
-            val homePkg = currentHome?.activityInfo?.packageName
-
-            if (homePkg != null && homePkg != packageName) {
-                AlertDialog.Builder(this)
-                    .setTitle(R.string.set_as_home)
-                    .setMessage(getString(R.string.set_as_home_instructions, homePkg))
-                    .setPositiveButton(R.string.open_app_settings) { _, _ ->
+        if (homePkg != null && homePkg != packageName) {
+            // Show instructions and open the current launcher's app settings
+            AlertDialog.Builder(this)
+                .setTitle(R.string.set_as_home)
+                .setMessage(getString(R.string.set_as_home_instructions, homePkg))
+                .setPositiveButton(R.string.open_app_settings) { _, _ ->
+                    try {
                         val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
                         intent.data = android.net.Uri.parse("package:$homePkg")
                         startActivity(intent)
+                    } catch (_: Exception) {
+                        startActivity(Intent(Settings.ACTION_SETTINGS))
                     }
-                    .setNegativeButton(R.string.cancel, null)
-                    .show()
-                return
+                }
+                .setNegativeButton(R.string.cancel, null)
+                .show()
+        } else {
+            // No default set or we're already default — open general settings
+            try {
+                startActivity(Intent(Settings.ACTION_HOME_SETTINGS))
+            } catch (_: Exception) {
+                startActivity(Intent(Settings.ACTION_SETTINGS))
             }
-        } catch (_: Exception) {}
-
-        // Approach 3: Open general home settings
-        try {
-            startActivity(Intent(Settings.ACTION_HOME_SETTINGS))
-        } catch (_: Exception) {
-            startActivity(Intent(Settings.ACTION_SETTINGS))
         }
     }
 
