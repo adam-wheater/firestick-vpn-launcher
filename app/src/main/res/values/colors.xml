@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="background">#FF1A1A2E</color>
+    <color name="surface">#FF16213E</color>
+    <color name="row_focused">#FF0F3460</color>
+    <color name="row_default">#FF1A1A2E</color>
+    <color name="vpn_connected">#FF4CAF50</color>
+    <color name="vpn_disconnected">#FFF44336</color>
+    <color name="text_primary">#FFFFFFFF</color>
+    <color name="text_secondary">#FFB0B0B0</color>
+    <color name="toggle_on">#FF4CAF50</color>
+    <color name="toggle_off">#FF757575</color>
+    <color name="shield_icon">#FFFFC107</color>
+</resources>
