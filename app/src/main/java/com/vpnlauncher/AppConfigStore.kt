@@ -11,6 +11,7 @@ class AppConfigStore(context: Context) {
     private val key = "vpn_required_packages"
     private val routerVpnKey = "router_vpn_enabled"
     private val appOrderKey = "app_order"
+    private val hiddenAppsKey = "hidden_packages"
 
     fun isVpnRequired(packageName: String): Boolean {
         return getVpnRequiredPackages().contains(packageName)
@@ -45,5 +46,19 @@ class AppConfigStore(context: Context) {
 
     fun saveAppOrder(order: List<String>) {
         prefs.edit().putString(appOrderKey, order.joinToString(",")).apply()
+    }
+
+    fun isHidden(packageName: String): Boolean {
+        return getHiddenPackages().contains(packageName)
+    }
+
+    fun setHidden(packageName: String, hidden: Boolean) {
+        val packages = getHiddenPackages().toMutableSet()
+        if (hidden) packages.add(packageName) else packages.remove(packageName)
+        prefs.edit().putStringSet(hiddenAppsKey, packages).apply()
+    }
+
+    fun getHiddenPackages(): Set<String> {
+        return prefs.getStringSet(hiddenAppsKey, emptySet()) ?: emptySet()
     }
 }

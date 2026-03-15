@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import android.view.View
 import android.widget.ImageView
@@ -14,6 +16,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
@@ -29,6 +34,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnRouterVpn: TextView
 
     private var pendingLaunchPackage: String? = null
+    private var showingHidden: Boolean = false
+    private val clockHandler = Handler(Looper.getMainLooper())
+    private val clockFormat = SimpleDateFormat("EEE d MMM  HH:mm", Locale.getDefault())
 
     private val homeRoleLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -103,7 +111,8 @@ class MainActivity : AppCompatActivity() {
             onAppClicked = { app -> onAppClicked(app) },
             onAppLongClicked = { position -> enterEditMode(position) },
             onEditModeMove = { from, direction -> handleEditModeMove(from, direction) },
-            onEditModeDrop = { exitEditMode() }
+            onEditModeDrop = { exitEditMode() },
+            onToggleHidden = { toggleShowHidden() }
         )
 
         rvAppGrid.layoutManager = GridLayoutManager(this, 4)
@@ -112,6 +121,7 @@ class MainActivity : AppCompatActivity() {
         vpnChecker.startMonitoring { _ -> refreshVpnHeader() }
 
         refreshVpnHeader()
+        updateClock()
         loadApps()
 
         if (configStore.isRouterVpnEnabled) {
@@ -142,6 +152,7 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         vpnChecker.stopMonitoring()
+        clockHandler.removeCallbacksAndMessages(null)
     }
 
     @Suppress("DEPRECATION")
@@ -150,6 +161,22 @@ class MainActivity : AppCompatActivity() {
             exitEditMode()
         }
         // Otherwise do nothing — this is the home screen
+    }
+
+    // --- Clock ---
+
+    private fun updateClock() {
+        val tvAppName = findViewById<TextView>(R.id.tvAppName)
+        tvAppName.text = clockFormat.format(Date())
+        clockHandler.postDelayed({ updateClock() }, 15000) // Update every 15 seconds
+    }
+
+    // --- Show/hide hidden apps ---
+
+    private fun toggleShowHidden() {
+        showingHidden = !showingHidden
+        adapter.showingHidden = showingHidden
+        loadApps()
     }
 
     // --- Default home launcher ---
@@ -228,11 +255,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun handleEditModeMove(from: Int, direction: Int) {
         val columns = 4
+        val maxPos = adapter.getAppCount() - 1  // Don't move into toggle tile
         val newPos = when (direction) {
             AppGridAdapter.MOVE_LEFT -> if (from > 0) from - 1 else from
-            AppGridAdapter.MOVE_RIGHT -> if (from < adapter.itemCount - 1) from + 1 else from
+            AppGridAdapter.MOVE_RIGHT -> if (from < maxPos) from + 1 else from
             AppGridAdapter.MOVE_UP -> if (from >= columns) from - columns else from
-            AppGridAdapter.MOVE_DOWN -> if (from + columns < adapter.itemCount) from + columns else from
+            AppGridAdapter.MOVE_DOWN -> if (from + columns <= maxPos) from + columns else from
             else -> from
         }
 
@@ -308,6 +336,10 @@ class MainActivity : AppCompatActivity() {
                 excludedPrefixes.none { prefix ->
                     appInfo.packageName.startsWith(prefix)
                 }
+            }
+            .filter { appInfo ->
+                // Show hidden apps only when toggled
+                showingHidden || !configStore.isHidden(appInfo.packageName)
             }
             .map { appInfo ->
                 AppInfo(
