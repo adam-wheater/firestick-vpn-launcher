@@ -173,28 +173,31 @@ class MainActivity : AppCompatActivity() {
     // --- Default home launcher ---
 
     private fun isDefaultHome(): Boolean {
-        val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
-        val resolveInfo = packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
-        return resolveInfo?.activityInfo?.packageName == packageName
+        // Check if we're either the actual default home OR the accessibility service is running
+        val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+        val resolveInfo = packageManager.resolveActivity(homeIntent, PackageManager.MATCH_DEFAULT_ONLY)
+        if (resolveInfo?.activityInfo?.packageName == packageName) return true
+
+        // Check if accessibility service is enabled (handles home redirect)
+        return isAccessibilityServiceEnabled()
+    }
+
+    private fun isAccessibilityServiceEnabled(): Boolean {
+        val enabledServices = Settings.Secure.getString(
+            contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        ) ?: return false
+        return enabledServices.contains("com.vpnlauncher/.AppBlockerService")
     }
 
     private fun requestHomeRole() {
         AlertDialog.Builder(this)
             .setTitle(R.string.set_as_home)
-            .setMessage(R.string.set_as_home_fire_os)
-            .setPositiveButton(R.string.open_app_settings) { _, _ ->
-                // Open the Amazon launcher's app info — user needs "Clear defaults"
+            .setMessage(R.string.set_as_home_accessibility)
+            .setPositiveButton(R.string.open_accessibility_settings) { _, _ ->
                 try {
-                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                    intent.data = android.net.Uri.parse("package:com.amazon.tv.launcher")
-                    startActivity(intent)
+                    startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
                 } catch (_: Exception) {
-                    try {
-                        // Fallback: open all apps management
-                        startActivity(Intent(Settings.ACTION_MANAGE_ALL_APPLICATIONS_SETTINGS))
-                    } catch (_: Exception) {
-                        startActivity(Intent(Settings.ACTION_SETTINGS))
-                    }
+                    startActivity(Intent(Settings.ACTION_SETTINGS))
                 }
             }
             .setNeutralButton(R.string.skip, null)
