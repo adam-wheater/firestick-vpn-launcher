@@ -1,7 +1,6 @@
 package com.vpnlauncher
 
 import android.app.AlertDialog
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.ImageView
 import android.widget.Switch
@@ -133,7 +132,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadApps() {
         val pm = packageManager
-        val apps = pm.getInstalledApplications(PackageManager.ApplicationInfoFlags.of(0))
+        @Suppress("DEPRECATION")
+        val apps = pm.getInstalledApplications(0)
             .filter { appInfo ->
                 pm.getLaunchIntentForPackage(appInfo.packageName) != null
             }
