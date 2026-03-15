@@ -67,13 +67,15 @@ class BlockedActivity : AppCompatActivity() {
             }
             else -> {
                 builder.setPositiveButton(R.string.vpn_app_not_found, null)
-                builder.setOnShowListener { dialog ->
-                    (dialog as AlertDialog).getButton(AlertDialog.BUTTON_POSITIVE)?.isEnabled = false
-                }
             }
         }
 
-        builder.show()
+        val dialog = builder.create()
+        dialog.show()
+
+        if (vpnApps.isEmpty()) {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.isEnabled = false
+        }
     }
 
     private fun showVpnPicker(vpnApps: List<VpnAppDetector.VpnApp>) {

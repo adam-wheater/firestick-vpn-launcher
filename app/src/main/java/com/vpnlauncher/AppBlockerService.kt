@@ -20,7 +20,7 @@ class AppBlockerService : AccessibilityService() {
 
         val packageName = event.packageName?.toString() ?: return
 
-        if (packageName == BuildConfig.APPLICATION_ID) return
+        if (packageName == "com.vpnlauncher") return
         if (packageName.startsWith("com.android.")) return
         if (packageName == "android") return
 
