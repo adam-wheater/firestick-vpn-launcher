@@ -2,7 +2,6 @@ package com.vpnlauncher
 
 import android.app.AlertDialog
 import android.app.role.RoleManager
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -162,19 +161,45 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun requestHomeRole() {
+        // Try multiple approaches — Fire OS doesn't support all standard Android APIs
+
+        // Approach 1: RoleManager (stock Android 10+)
         try {
-            val roleManager = getSystemService(Context.ROLE_SERVICE) as RoleManager
-            if (!roleManager.isRoleHeld(RoleManager.ROLE_HOME)) {
+            val roleManager = getSystemService(Context.ROLE_SERVICE) as? RoleManager
+            if (roleManager != null && !roleManager.isRoleHeld(RoleManager.ROLE_HOME)) {
                 val intent = roleManager.createRequestRoleIntent(RoleManager.ROLE_HOME)
                 homeRoleLauncher.launch(intent)
+                return
             }
-        } catch (e: Exception) {
-            // Fallback: open home settings
-            try {
-                startActivity(Intent(Settings.ACTION_HOME_SETTINGS))
-            } catch (e2: Exception) {
-                startActivity(Intent(Settings.ACTION_SETTINGS))
+        } catch (_: Exception) {}
+
+        // Approach 2: Open the current home app's "App Info" so user can "Clear Defaults"
+        // Then pressing Home will trigger the chooser
+        try {
+            val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+            val currentHome = packageManager.resolveActivity(homeIntent, PackageManager.MATCH_DEFAULT_ONLY)
+            val homePkg = currentHome?.activityInfo?.packageName
+
+            if (homePkg != null && homePkg != packageName) {
+                AlertDialog.Builder(this)
+                    .setTitle(R.string.set_as_home)
+                    .setMessage(getString(R.string.set_as_home_instructions, homePkg))
+                    .setPositiveButton(R.string.open_app_settings) { _, _ ->
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                        intent.data = android.net.Uri.parse("package:$homePkg")
+                        startActivity(intent)
+                    }
+                    .setNegativeButton(R.string.cancel, null)
+                    .show()
+                return
             }
+        } catch (_: Exception) {}
+
+        // Approach 3: Open general home settings
+        try {
+            startActivity(Intent(Settings.ACTION_HOME_SETTINGS))
+        } catch (_: Exception) {
+            startActivity(Intent(Settings.ACTION_SETTINGS))
         }
     }
 
