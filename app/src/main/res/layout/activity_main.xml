@@ -51,21 +51,41 @@
         </LinearLayout>
     </RelativeLayout>
 
-    <!-- Set as Home banner (hidden when already default) -->
-    <TextView
-        android:id="@+id/btnSetHome"
+    <!-- Set as Home banner (hidden when already default or dismissed) -->
+    <LinearLayout
+        android:id="@+id/bannerSetHome"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/set_as_home"
-        android:textColor="@color/shield_icon"
-        android:textSize="14sp"
-        android:gravity="center"
-        android:padding="10dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
         android:background="@color/surface"
-        android:focusable="true"
-        android:clickable="true"
+        android:padding="10dp"
         android:layout_marginBottom="6dp"
-        android:visibility="gone" />
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/btnSetHome"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/set_as_home"
+            android:textColor="@color/shield_icon"
+            android:textSize="14sp"
+            android:gravity="center"
+            android:focusable="true"
+            android:clickable="true" />
+
+        <TextView
+            android:id="@+id/btnDismissBanner"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/dismiss"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:padding="8dp"
+            android:focusable="true"
+            android:clickable="true" />
+    </LinearLayout>
 
     <!-- Quick access bar -->
     <LinearLayout

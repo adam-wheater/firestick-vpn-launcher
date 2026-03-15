@@ -30,4 +30,5 @@
     <string name="set_as_home_accessibility">To make VPN Launcher your home screen:\n\n1. Press \"Enable\" below to open Accessibility settings\n2. Find \"VPN Launcher\" in the list\n3. Select it and turn it ON\n4. Press Home — it will now open VPN Launcher\n\nThis also auto-starts VPN Launcher on boot and blocks VPN-required apps system-wide.</string>
     <string name="open_accessibility_settings">Enable</string>
     <string name="skip">Skip</string>
+    <string name="dismiss">Dismiss</string>
 </resources>

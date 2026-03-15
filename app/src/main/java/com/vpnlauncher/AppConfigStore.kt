@@ -12,6 +12,7 @@ class AppConfigStore(context: Context) {
     private val routerVpnKey = "router_vpn_enabled"
     private val appOrderKey = "app_order"
     private val hiddenAppsKey = "hidden_packages"
+    private val bannerDismissedKey = "banner_dismissed"
 
     fun isVpnRequired(packageName: String): Boolean {
         return getVpnRequiredPackages().contains(packageName)
@@ -34,6 +35,10 @@ class AppConfigStore(context: Context) {
     var isRouterVpnEnabled: Boolean
         get() = prefs.getBoolean(routerVpnKey, false)
         set(value) = prefs.edit().putBoolean(routerVpnKey, value).apply()
+
+    var isBannerDismissed: Boolean
+        get() = prefs.getBoolean(bannerDismissedKey, false)
+        set(value) = prefs.edit().putBoolean(bannerDismissedKey, value).apply()
 
     /**
      * Returns the saved app order as a list of package names.

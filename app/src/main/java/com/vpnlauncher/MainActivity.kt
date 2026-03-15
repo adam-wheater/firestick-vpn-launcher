@@ -89,9 +89,13 @@ class MainActivity : AppCompatActivity() {
             refreshVpnHeader()
         }
 
-        // Set as Home button
+        // Set as Home banner
         findViewById<TextView>(R.id.btnSetHome).setOnClickListener {
             requestHomeRole()
+        }
+        findViewById<TextView>(R.id.btnDismissBanner).setOnClickListener {
+            configStore.isBannerDismissed = true
+            updateSetAsHomeVisibility()
         }
         updateSetAsHomeVisibility()
 
@@ -205,11 +209,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateSetAsHomeVisibility() {
-        val btnSetHome = findViewById<TextView>(R.id.btnSetHome)
-        if (isDefaultHome()) {
-            btnSetHome.visibility = View.GONE
+        val banner = findViewById<View>(R.id.bannerSetHome)
+        if (isDefaultHome() || configStore.isBannerDismissed) {
+            banner.visibility = View.GONE
         } else {
-            btnSetHome.visibility = View.VISIBLE
+            banner.visibility = View.VISIBLE
         }
     }
 
