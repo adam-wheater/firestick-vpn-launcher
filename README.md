@@ -1,18 +1,19 @@
 # VPN Launcher for Fire TV
 
-A Fire TV Stick app that lists your installed apps and lets you configure which ones require a VPN connection. If you try to launch a VPN-required app without VPN connected, it blocks the launch and prompts you to open NordVPN.
+A replacement home launcher for Fire TV that lets you control which apps require a VPN. Apps are shown in a grid layout that you can reorder, and any app marked as VPN-required is blocked from launching until you connect your VPN. Works with any VPN app — NordVPN, ExpressVPN, Surfshark, or whatever you have installed.
 
 ## Features
 
-- Lists all installed apps in a single scrollable view
-- Toggle any app to require VPN before launching
-- Real-time VPN status indicator (connected/disconnected)
-- Blocks launch of VPN-required apps when VPN is off
-- "Open NordVPN" prompt to quickly connect
-- Auto-launches your app after you connect VPN
-- **Router VPN support** — enable "Router VPN Mode" if your router handles VPN, verified via IP check
-- Fully navigable with the Fire TV remote
-- Config stored locally — no account or cloud needed
+- **Grid launcher** — 4-column app grid with icons and labels, replaces the Fire TV home screen
+- **VPN gating** — mark any app as VPN-required; it won't launch without an active VPN
+- **Any VPN supported** — auto-detects installed VPN apps, no configuration needed
+- **App reordering** — long-press to pick up an app, D-pad to move, press OK to drop
+- **Router VPN mode** — for VPN at the network level (router/gateway), verified via IP check
+- **Real-time VPN status** — header shows connected/disconnected, updates live
+- **Quick-access bar** — Settings, Appstore, and VPN buttons always at the top
+- **Auto-launch** — after connecting VPN, automatically launches the app you were trying to open
+- **Fully D-pad navigable** — built for the Fire TV remote
+- **No account needed** — everything stored locally on device
 
 ## Download
 
@@ -26,35 +27,63 @@ If you have [Downloader](https://www.amazon.com/dp/B01N0BP507) installed on your
 tinyurl.com/2dhccdb5
 ```
 
-## Install on Fire TV Stick
+## Install
+
+### Via Downloader (directly on Fire Stick)
+
+1. On your Fire Stick: **Settings > My Fire TV > Developer Options > Install unknown apps > Downloader > ON**
+2. Open Downloader and enter: `tinyurl.com/2dhccdb5`
+3. The APK will download — select **Install** when prompted
+4. Press the **Home** button — Fire OS will ask which launcher to use
+5. Select **VPN Launcher** and choose **Always**
 
 ### Via ADB (from computer)
 
 1. On your Fire Stick: **Settings > My Fire TV > Developer Options > ADB debugging > ON**
-2. Note your Fire Stick's IP address: **Settings > My Fire TV > About > Network**
-3. From your computer (same network):
+2. From your computer (same network):
 
    ```bash
    adb connect <fire-stick-ip>:5555
    adb install vpn-launcher.apk
    ```
 
-4. The app appears in **Your Apps & Channels** on the Fire TV home screen
-
-### Via Downloader App (directly on Fire Stick)
-
-1. Install [Downloader](https://www.amazon.com/dp/B01N0BP507) from the Amazon Appstore
-2. Open Downloader and enter: `tinyurl.com/2dhccdb5`
-3. The APK will download — select **Install** when prompted
-4. The app appears in **Your Apps & Channels**
+3. Press Home and select VPN Launcher as your default launcher
 
 ### Update
+
+Re-download via Downloader using the same URL, or:
 
 ```bash
 adb install -r vpn-launcher.apk
 ```
 
-Or re-download via Downloader using the same URL.
+### Revert to Fire TV Home
+
+To switch back to the default Fire TV launcher:
+
+**Settings > Applications > Manage Installed Applications > VPN Launcher > Clear defaults**
+
+Then press Home and select the Fire TV launcher.
+
+## How It Works
+
+1. Press Home — VPN Launcher opens as your home screen
+2. Browse your apps in the grid
+3. **Menu button** on the remote toggles VPN requirement for the focused app (shield icon appears)
+4. **Long-press** an app to reorder it — use D-pad to move, press OK to drop
+5. When you select a VPN-required app:
+   - VPN is on: app launches normally
+   - VPN is off: a dialog appears to open your VPN app (auto-detected)
+   - After connecting, your app launches automatically
+6. Quick-access bar at the top: **Settings** | **Appstore** | **VPN** | **Router VPN**
+
+### Router VPN Mode
+
+If your VPN runs on your router instead of on the Fire Stick:
+
+1. Press the **Router VPN** button in the quick-access bar to toggle it on
+2. The header shows "VPN Connected (Router)"
+3. VPN-required apps will launch without needing a device-level VPN
 
 ## Build from Source
 
@@ -66,33 +95,14 @@ cd firestick-vpn-launcher
 ./gradlew assembleRelease
 ```
 
-APK output: `app/build/outputs/apk/release/app-release-unsigned.apk`
-
-## How It Works
-
-1. Open VPN Launcher from your Fire TV apps
-2. Scroll through your app list with the D-pad
-3. Use the toggle on the right to mark apps that need VPN
-4. When you select a VPN-required app:
-   - If VPN is on (device or router): app launches normally
-   - If VPN is off: a dialog appears with "Open NordVPN" or "Cancel"
-   - After connecting NordVPN and returning, your app launches automatically
-
-### Router VPN Mode
-
-If your VPN runs on your router instead of on the Fire Stick:
-
-1. Enable the **Router VPN Mode** toggle at the top of the app
-2. The app will verify your VPN by checking your public IP against known VPN/datacenter ranges
-3. If verified, the header shows "VPN Connected (Router)"
-4. If the IP check can't confirm VPN, the app shows a warning but still trusts your toggle
+APK output: `app/build/outputs/apk/release/app-release.apk`
 
 ## Compatibility
 
 - Fire TV Stick (3rd gen and newer)
 - Fire TV Stick 4K / 4K Max
 - Fire TV Cube
-- Any FireOS device (Android-based)
+- Any FireOS 7+ device (Android-based)
 - **Not compatible** with Vega OS devices (Fire TV Stick 4K Select)
 
 ## License
