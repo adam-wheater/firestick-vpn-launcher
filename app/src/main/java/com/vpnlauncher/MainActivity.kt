@@ -1,12 +1,9 @@
 package com.vpnlauncher
 
-import android.accessibilityservice.AccessibilityServiceInfo
 import android.app.AlertDialog
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
-import android.view.accessibility.AccessibilityManager
 import android.widget.ImageView
 import android.widget.Switch
 import android.widget.TextView
@@ -25,7 +22,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var rvAppList: RecyclerView
     private lateinit var switchRouterVpn: Switch
     private lateinit var tvRouterVpnHint: TextView
-    private lateinit var tvServiceStatus: TextView
 
     private var pendingLaunchPackage: String? = null
     private var routerVpnVerified: Boolean = false
@@ -34,6 +30,13 @@ class MainActivity : AppCompatActivity() {
         "com.amazon.tv.",
         "com.amazon.device.",
         "com.android.",
+    )
+
+    // System packages to always exclude from the app list
+    // (they're accessible via the quick-access bar instead)
+    private val excludedPackages = setOf(
+        "android",
+        "com.nordvpn.android",  // Quick access button
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,13 +52,21 @@ class MainActivity : AppCompatActivity() {
         rvAppList = findViewById(R.id.rvAppList)
         switchRouterVpn = findViewById(R.id.switchRouterVpn)
         tvRouterVpnHint = findViewById(R.id.tvRouterVpnHint)
-        tvServiceStatus = findViewById(R.id.tvServiceStatus)
 
-        // Service status banner — click to enable
-        tvServiceStatus.setOnClickListener {
-            if (!isAccessibilityServiceEnabled()) {
-                showEnableServiceDialog()
-            }
+        // Quick access buttons
+        findViewById<TextView>(R.id.btnSettings).setOnClickListener {
+            startActivity(Intent(Settings.ACTION_SETTINGS))
+        }
+
+        findViewById<TextView>(R.id.btnAppStore).setOnClickListener {
+            val intent = packageManager.getLaunchIntentForPackage("com.amazon.venezia")
+                ?: packageManager.getLaunchIntentForPackage("com.amazon.apps.store")
+            intent?.let { startActivity(it) }
+        }
+
+        findViewById<TextView>(R.id.btnNordVpn).setOnClickListener {
+            val intent = packageManager.getLaunchIntentForPackage("com.nordvpn.android")
+            intent?.let { startActivity(it) }
         }
 
         // Router VPN toggle
@@ -88,11 +99,6 @@ class MainActivity : AppCompatActivity() {
         if (configStore.isRouterVpnEnabled) {
             verifyRouterVpn()
         }
-
-        // Prompt to enable accessibility service on first launch
-        if (!isAccessibilityServiceEnabled()) {
-            showEnableServiceDialog()
-        }
     }
 
     override fun onResume() {
@@ -100,7 +106,6 @@ class MainActivity : AppCompatActivity() {
 
         val vpnActive = isVpnEffectivelyActive()
         updateVpnStatus(vpnActive)
-        updateServiceStatus()
         loadApps()
 
         if (configStore.isRouterVpnEnabled) {
@@ -120,35 +125,10 @@ class MainActivity : AppCompatActivity() {
         vpnChecker.stopMonitoring()
     }
 
-    private fun isAccessibilityServiceEnabled(): Boolean {
-        val am = getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
-        val enabledServices = am.getEnabledAccessibilityServiceList(
-            AccessibilityServiceInfo.FEEDBACK_GENERIC
-        )
-        return enabledServices.any {
-            it.resolveInfo.serviceInfo.packageName == packageName
-        }
-    }
-
-    private fun updateServiceStatus() {
-        if (isAccessibilityServiceEnabled()) {
-            tvServiceStatus.text = getString(R.string.service_enabled)
-            tvServiceStatus.setTextColor(getColor(R.color.vpn_connected))
-        } else {
-            tvServiceStatus.text = getString(R.string.service_disabled)
-            tvServiceStatus.setTextColor(getColor(R.color.vpn_disconnected))
-        }
-    }
-
-    private fun showEnableServiceDialog() {
-        AlertDialog.Builder(this)
-            .setTitle(R.string.enable_service_title)
-            .setMessage(R.string.enable_service_message)
-            .setPositiveButton(R.string.open_settings) { _, _ ->
-                startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-            }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
+    // Prevent back button from leaving the launcher
+    @Suppress("DEPRECATION")
+    override fun onBackPressed() {
+        // Do nothing — this is the home screen
     }
 
     private fun isVpnEffectivelyActive(): Boolean {
@@ -184,9 +164,12 @@ class MainActivity : AppCompatActivity() {
                 appInfo.packageName != packageName
             }
             .filter { appInfo ->
+                appInfo.packageName !in excludedPackages
+            }
+            .filter { appInfo ->
                 excludedPrefixes.none { prefix ->
                     appInfo.packageName.startsWith(prefix)
-                } && appInfo.packageName != "android"
+                }
             }
             .map { appInfo ->
                 AppInfo(

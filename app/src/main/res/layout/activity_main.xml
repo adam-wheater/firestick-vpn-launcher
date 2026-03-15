@@ -49,20 +49,60 @@
         </LinearLayout>
     </RelativeLayout>
 
-    <!-- Service status banner -->
-    <TextView
-        android:id="@+id/tvServiceStatus"
+    <!-- Quick access bar -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/service_disabled"
-        android:textColor="@color/vpn_disconnected"
-        android:textSize="14sp"
-        android:padding="10dp"
-        android:gravity="center"
-        android:background="@color/surface"
-        android:focusable="true"
-        android:clickable="true"
-        android:layout_marginBottom="8dp" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:id="@+id/btnSettings"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/settings"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:gravity="center"
+            android:padding="10dp"
+            android:background="@drawable/row_background"
+            android:focusable="true"
+            android:clickable="true"
+            android:layout_marginEnd="4dp" />
+
+        <TextView
+            android:id="@+id/btnAppStore"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/app_store"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:gravity="center"
+            android:padding="10dp"
+            android:background="@drawable/row_background"
+            android:focusable="true"
+            android:clickable="true"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp" />
+
+        <TextView
+            android:id="@+id/btnNordVpn"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/nordvpn"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:gravity="center"
+            android:padding="10dp"
+            android:background="@drawable/row_background"
+            android:focusable="true"
+            android:clickable="true"
+            android:layout_marginStart="4dp" />
+    </LinearLayout>
 
     <!-- Router VPN toggle -->
     <LinearLayout
@@ -102,7 +142,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:focusable="true"
-            android:focusableInTouchMode="true"
             android:minHeight="48dp" />
     </LinearLayout>
 

@@ -18,9 +18,7 @@
     <string name="router_vpn_verified">Router VPN verified</string>
     <string name="router_vpn_not_verified">Router VPN not verified — IP check failed</string>
     <string name="accessibility_service_description">VPN Launcher monitors which apps are opened and blocks VPN-required apps when VPN is not connected.</string>
-    <string name="enable_service_title">Enable App Blocker</string>
-    <string name="enable_service_message">To block apps system-wide, VPN Launcher needs Accessibility Service permission.\n\nGo to: Settings → Accessibility → VPN Launcher → ON</string>
-    <string name="open_settings">Open Settings</string>
-    <string name="service_enabled">App blocker is active</string>
-    <string name="service_disabled">App blocker is not active — tap to enable</string>
+    <string name="settings">Settings</string>
+    <string name="app_store">Appstore</string>
+    <string name="nordvpn">NordVPN</string>
 </resources>
