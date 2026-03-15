@@ -14,6 +14,7 @@ class VpnChecker(context: Context) {
     private val mainHandler = Handler(Looper.getMainLooper())
     private var listener: ((Boolean) -> Unit)? = null
     private var vpnCallback: ConnectivityManager.NetworkCallback? = null
+    private var lostDebounceRunnable: Runnable? = null
 
     fun isVpnActive(): Boolean {
         val activeNetwork = cm.activeNetwork
@@ -36,11 +37,18 @@ class VpnChecker(context: Context) {
 
         val callback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
+                // Cancel any pending "disconnected" notification (network transition)
+                lostDebounceRunnable?.let { mainHandler.removeCallbacks(it) }
+                lostDebounceRunnable = null
                 mainHandler.post { listener?.invoke(true) }
             }
 
             override fun onLost(network: Network) {
-                mainHandler.post { listener?.invoke(isVpnActive()) }
+                // Debounce by 500ms to avoid flashing during VPN network transitions
+                lostDebounceRunnable?.let { mainHandler.removeCallbacks(it) }
+                val runnable = Runnable { listener?.invoke(isVpnActive()) }
+                lostDebounceRunnable = runnable
+                mainHandler.postDelayed(runnable, 500)
             }
         }
 
@@ -52,6 +60,8 @@ class VpnChecker(context: Context) {
     }
 
     fun stopMonitoring() {
+        lostDebounceRunnable?.let { mainHandler.removeCallbacks(it) }
+        lostDebounceRunnable = null
         vpnCallback?.let { cm.unregisterNetworkCallback(it) }
         vpnCallback = null
         listener = null
