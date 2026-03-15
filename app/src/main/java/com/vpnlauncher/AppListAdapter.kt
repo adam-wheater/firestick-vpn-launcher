@@ -1,5 +1,6 @@
 package com.vpnlauncher
 
+import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -43,8 +44,20 @@ class AppListAdapter(
             holder.ivShield.visibility = if (checked) View.VISIBLE else View.GONE
         }
 
+        // Click listener for touch and standard click events
         holder.appLaunchArea.setOnClickListener {
             onAppClicked(app)
+        }
+
+        // Explicit D-pad center/enter key handling for Fire TV remote
+        holder.appLaunchArea.setOnKeyListener { _, keyCode, event ->
+            if (event.action == KeyEvent.ACTION_UP &&
+                (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER)) {
+                onAppClicked(app)
+                true
+            } else {
+                false
+            }
         }
     }
 
