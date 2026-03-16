@@ -123,10 +123,15 @@ class AppGridAdapter(
                 return@setOnKeyListener true
             }
 
-            // Long-press center: enter edit mode (detect via repeat count)
+            // Long-press center: enter edit mode (detect via first repeat only)
             if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER && event.action == KeyEvent.ACTION_DOWN
-                && event.repeatCount > 0 && !isInEditMode) {
+                && event.repeatCount == 1 && !isInEditMode) {
                 onAppLongClicked(holder.adapterPosition)
+                return@setOnKeyListener true
+            }
+
+            // Consume further center repeats while in edit mode to prevent flicker
+            if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER && event.repeatCount > 0) {
                 return@setOnKeyListener true
             }
 
