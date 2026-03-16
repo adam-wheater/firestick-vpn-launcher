@@ -63,11 +63,13 @@ class MainActivity : AppCompatActivity() {
 
         // Quick access: Settings
         findViewById<TextView>(R.id.btnSettings).setOnClickListener {
+            AppBlockerService.lastLaunchTime = System.currentTimeMillis()
             startActivity(Intent(Settings.ACTION_SETTINGS))
         }
 
         // Quick access: Appstore
         findViewById<TextView>(R.id.btnAppStore).setOnClickListener {
+            AppBlockerService.lastLaunchTime = System.currentTimeMillis()
             val intent = packageManager.getLaunchIntentForPackage("com.amazon.venezia")
                 ?: packageManager.getLaunchIntentForPackage("com.amazon.apps.store")
             intent?.let { startActivity(it) }
@@ -427,6 +429,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openVpnApp() {
+        AppBlockerService.lastLaunchTime = System.currentTimeMillis()
         val vpnApps = vpnAppDetector.getInstalledVpnApps()
         when {
             vpnApps.size == 1 -> {
@@ -449,6 +452,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun launchApp(packageName: String) {
         val intent = packageManager.getLaunchIntentForPackage(packageName) ?: return
+        // Set grace period so the accessibility service doesn't redirect
+        // when the Amazon launcher briefly appears during app transitions
+        AppBlockerService.lastLaunchTime = System.currentTimeMillis()
         startActivity(intent)
     }
 }
