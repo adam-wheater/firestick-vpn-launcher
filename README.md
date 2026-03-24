@@ -15,90 +15,294 @@ A replacement home launcher for Fire TV that lets you control which apps require
 - **Fully D-pad navigable** — built for the Fire TV remote
 - **No account needed** — everything stored locally on device
 
-## Download
+---
 
-**[Download latest APK](https://github.com/adam-wheater/firestick-vpn-launcher/releases/latest/download/vpn-launcher.apk)**
+## Step 1 — Download the APK onto your Fire Stick
 
-### Downloader App
+The easiest way to install VPN Launcher is using the free **Downloader** app directly on your Fire Stick. No computer needed for this step.
 
-If you have [Downloader](https://www.amazon.com/dp/B01N0BP507) installed on your Fire Stick, enter this URL:
+### 1a. Install Downloader from the Amazon Appstore
 
-```
-tinyurl.com/2dhccdb5
-```
+1. On your Fire Stick, go to the **Home screen**
+2. Open the **Appstore** (search icon at the top)
+3. Search for **Downloader** (by AFTVnews)
+4. Install it — it's free
 
-## Install
+### 1b. Allow apps from unknown sources
 
-### Via Downloader (directly on Fire Stick)
+Fire OS blocks third-party APKs by default. You need to allow Downloader to install them:
 
-1. On your Fire Stick: **Settings > My Fire TV > Developer Options > Install unknown apps > Downloader > ON**
-2. Open Downloader and enter: `tinyurl.com/2dhccdb5`
-3. The APK will download — select **Install** when prompted
-4. Press the **Home** button — Fire OS will ask which launcher to use
-5. Select **VPN Launcher** and choose **Always**
+1. Go to **Settings** (gear icon)
+2. Select **My Fire TV**
+3. Select **Developer Options**
+   - If you don't see Developer Options, go back to **My Fire TV**, click **About**, then rapidly click the **Fire TV Stick** entry 7 times until a message says "Developer options enabled"
+4. Select **Install unknown apps**
+5. Find **Downloader** in the list and turn it **ON**
 
-### Via ADB (from computer)
+### 1c. Download the APK
 
-1. On your Fire Stick: **Settings > My Fire TV > Developer Options > ADB debugging > ON**
-2. From your computer (same network):
-
-   ```bash
-   adb connect <fire-stick-ip>:5555
-   adb install vpn-launcher.apk
+1. Open **Downloader**
+2. Select the URL bar and enter exactly:
    ```
+   tinyurl.com/2dhccdb5
+   ```
+3. Press **Go** (or the centre button on your remote)
+4. The APK will download automatically — this takes a few seconds
+5. When prompted, select **Install**
+6. Once installed, select **Done** (not "Open" — you'll set it up properly in the next step)
 
-3. Press Home and select VPN Launcher as your default launcher
+---
 
-### Set as Default Home Screen (optional)
+## Step 2 — Open VPN Launcher for the first time
 
-Fire OS doesn't allow changing the home launcher without a one-time ADB command. This is the same requirement as Wolf Launcher, Projectivy, and every other custom Fire TV launcher.
+1. Press the **Home** button on your remote
+2. Fire OS may ask which app to use as your home screen — if it does, select **VPN Launcher** and choose **Always**
+3. If it doesn't ask, find VPN Launcher in your apps list and open it from there
 
-From a computer on the same WiFi network:
+> **Note:** VPN Launcher works fully without being set as your default home screen. You can use it as a regular app and still get VPN blocking. Setting it as the home screen just means pressing Home opens it automatically. To do that you'll need ADB — see [Step 4](#step-4--set-vpn-launcher-as-your-home-screen-requires-adb).
+
+---
+
+## Step 3 — Using the app
+
+### The header bar
+
+At the very top of the screen you'll see:
+
+| Element | What it does |
+|---|---|
+| **Date & time** (top left) | Live clock |
+| **VPN status** (top right) | Shows "VPN Connected" (green) or "VPN Disconnected" (red) based on whether a VPN is active on your device |
+
+### The quick-access bar
+
+Just below the header is a row of buttons:
+
+| Button | What it does |
+|---|---|
+| **Settings** | Opens Fire OS system settings |
+| **Appstore** | Opens the Amazon Appstore |
+| **VPN** | Opens your VPN app (if you have one installed). If you have multiple VPN apps, it shows a list to choose from |
+| **Router VPN** | Toggles Router VPN mode on/off (see [Router VPN mode](#router-vpn-mode) below) |
+
+### The app grid
+
+Your installed apps appear as a 4-column grid below the quick-access bar. The last tile in the grid is always the **Show Hidden / Hide Hidden** tile (see [Hiding apps](#hiding-apps) below).
+
+**Navigating:** Use the D-pad on your remote to move between apps. Press the **centre button** (OK) to launch an app.
+
+### Setting an app to require VPN (the shield icon)
+
+The **Menu button** on your Fire TV remote (the three-line hamburger button) cycles an app through three states:
+
+```
+Normal  →  VPN Required (🛡 shield)  →  Hidden (eye-off)  →  Normal  →  ...
+```
+
+1. Navigate to any app in the grid
+2. Press the **Menu button** once — a **shield icon** appears on the app. This app now requires VPN to launch
+3. Press **Menu** again — the shield disappears and a **hidden icon** appears. The app is now hidden from the grid
+4. Press **Menu** again — the app returns to normal (visible, no VPN requirement)
+
+**Recommended apps to mark as VPN Required:**
+
+The following apps should always be set to require VPN. Navigate to each one and press **Menu** once to add the shield:
+
+- **Sky Sports**
+- **Kodi**
+- **Stremio**
+
+**What happens when you try to open a VPN-required app without a VPN connected:**
+
+- A dialog appears explaining that VPN is not connected
+- It shows a button to open your VPN app (auto-detected from your installed apps)
+- Connect your VPN, then come back — the app will launch automatically
+
+### Reordering apps
+
+You can drag apps into any order:
+
+1. Navigate to the app you want to move
+2. **Long-press the centre button** (hold it down for about a second) — the app lifts slightly and a hint appears at the bottom of the screen
+3. Use the **D-pad** to move the app left, right, up, or down
+4. Press the **centre button** again to drop it in place (or press Back to cancel)
+
+The order is saved automatically and persists after reboot.
+
+### Hiding apps
+
+You can hide apps you don't want cluttering the grid (e.g. system apps, things you never use).
+
+**To hide an app:**
+
+1. Navigate to the app
+2. Press **Menu** twice (once for VPN shield, twice for hidden)
+3. The app disappears from the grid immediately
+
+**To un-hide an app:**
+
+Hidden apps don't show in the main grid — you need to reveal them first:
+
+1. Scroll to the **end of the app grid** and select the **"Show Hidden"** tile
+2. All hidden apps reappear in the grid, dimmed with a small eye-off icon
+3. Navigate to the app you want to un-hide
+4. Press **Menu** — it cycles from hidden back to normal
+5. The app is now visible and normal again
+6. Select the **"Hide Hidden"** tile (same position, label changed) to go back to the clean view
+
+> **Important:** If you mark an app as hidden and it disappears, you **must** use the "Show Hidden" tile to bring it back before you can change its state. It won't appear anywhere else.
+
+### Router VPN mode
+
+If your VPN runs on your **router** rather than on the Fire Stick itself (common with home setups using pfSense, OPNsense, or a VPN router), use this mode:
+
+1. Press the **Router VPN** button in the quick-access bar
+2. The button turns green and the header shows **"VPN Connected (Router)"**
+3. All apps marked as VPN-required will now launch freely, since your router handles the VPN
+4. Press **Router VPN** again to turn it off
+
+> Router VPN mode is a trust toggle — it takes your word that the VPN is active at the network level. It does not check your IP automatically on a schedule.
+
+---
+
+## Step 4 — Set VPN Launcher as your home screen (requires ADB)
+
+Fire OS does not allow apps to set themselves as the default home screen without a one-time ADB command from a computer. This is the same requirement as Wolf Launcher, Projectivy, and every other third-party Fire TV launcher.
+
+**You only need to do this once.** After that, pressing Home always opens VPN Launcher, and it starts automatically on boot.
+
+If you don't want to do this, skip it — VPN Launcher still works perfectly as a regular app.
+
+---
+
+### Step 4a — Find your Fire Stick's IP address
+
+1. On your Fire Stick, go to **Settings**
+2. Select **My Fire TV**
+3. Select **About**
+4. Select **Network** — note the **IP address** (e.g. `192.168.1.45`)
+
+---
+
+### Step 4b — Enable ADB debugging on the Fire Stick
+
+1. Go to **Settings > My Fire TV > Developer Options**
+2. Turn **ADB debugging** to **ON**
+3. Turn **Apps from unknown sources** to **ON** if not already done
+
+---
+
+### Step 4c — Install ADB on your computer
+
+ADB (Android Debug Bridge) is a free tool from Google. Pick your OS:
+
+#### Windows
+
+1. Download the [Android Platform Tools ZIP](https://developer.android.com/tools/releases/platform-tools) from Google
+2. Extract the ZIP to a folder, e.g. `C:\platform-tools`
+3. Open **Command Prompt**: press `Win + R`, type `cmd`, press Enter
+4. Navigate to the folder:
+   ```
+   cd C:\platform-tools
+   ```
+5. All `adb` commands below should be run from this Command Prompt window
+
+#### macOS
+
+Open **Terminal** (press `Cmd + Space`, type "Terminal") and run:
 
 ```bash
-adb connect <fire-stick-ip>:5555
+brew install android-platform-tools
+```
+
+If you don't have Homebrew, install it first from [brew.sh](https://brew.sh), or download the Platform Tools ZIP from Google and extract it.
+
+#### Linux (Ubuntu/Debian)
+
+Open a terminal and run:
+
+```bash
+sudo apt update && sudo apt install adb
+```
+
+---
+
+### Step 4d — Connect ADB to your Fire Stick
+
+Your computer and Fire Stick must be on the **same WiFi network**.
+
+In your terminal / command prompt, run:
+
+```bash
+adb connect <your-fire-stick-ip>:5555
+```
+
+Replace `<your-fire-stick-ip>` with the IP you noted in Step 4a. For example:
+
+```bash
+adb connect 192.168.1.45:5555
+```
+
+You should see:
+```
+connected to 192.168.1.45:5555
+```
+
+> **Fire Stick prompts you?** A dialog may appear on your TV asking "Allow ADB debugging?" — select **Always allow from this computer** and press OK.
+
+If you see `failed to connect` or `connection refused`:
+- Double-check the IP address
+- Make sure ADB debugging is ON (Step 4b)
+- Make sure both devices are on the same WiFi network
+- Try turning ADB debugging off and back on
+
+---
+
+### Step 4e — Grant the permission
+
+Run this command (copy it exactly):
+
+```bash
 adb shell pm grant com.vpnlauncher android.permission.WRITE_SECURE_SETTINGS
 ```
 
-Then open VPN Launcher and press the yellow setup banner — it will activate automatically. Pressing Home now opens VPN Launcher, and it auto-starts on boot.
+You won't see any output if it works — that's normal. If you see an error, check that VPN Launcher is actually installed by running `adb shell pm list packages | grep vpnlauncher`.
 
-**Without this step**, VPN Launcher still works perfectly — just open it from your apps list. VPN blocking works either way.
+---
 
-### Update
+### Step 4f — Activate in the app
 
-Re-download via Downloader using the same URL, or:
+1. Open **VPN Launcher** on your Fire Stick
+2. A **yellow banner** at the top says "Tap to set as home screen" — navigate to it and press the centre button
+3. A confirmation dialog appears — press **OK**
+4. Done. Press **Home** — VPN Launcher opens
+
+> If the yellow banner is gone, press the **Home** button. If VPN Launcher doesn't open, open VPN Launcher manually, navigate to the banner, and try again. If you dismissed the banner by accident, restart the app.
+
+---
+
+## Updating
+
+Re-download using the same Downloader URL (`tinyurl.com/2dhccdb5`) and install over the top — your settings and app order are preserved.
+
+Via ADB:
 
 ```bash
 adb install -r vpn-launcher.apk
 ```
 
-### Revert to Fire TV Home
+---
+
+## Reverting to the Fire TV home screen
 
 To switch back to the default Fire TV launcher:
 
-**Settings > Applications > Manage Installed Applications > VPN Launcher > Clear defaults**
+1. Go to **Settings > Applications > Manage Installed Applications**
+2. Select **VPN Launcher**
+3. Select **Clear defaults**
+4. Press **Home** and select the Fire TV launcher
 
-Then press Home and select the Fire TV launcher.
-
-## How It Works
-
-1. Press Home — VPN Launcher opens as your home screen
-2. Browse your apps in the grid
-3. **Menu button** on the remote toggles VPN requirement for the focused app (shield icon appears)
-4. **Long-press** an app to reorder it — use D-pad to move, press OK to drop
-5. When you select a VPN-required app:
-   - VPN is on: app launches normally
-   - VPN is off: a dialog appears to open your VPN app (auto-detected)
-   - After connecting, your app launches automatically
-6. Quick-access bar at the top: **Settings** | **Appstore** | **VPN** | **Router VPN**
-
-### Router VPN Mode
-
-If your VPN runs on your router instead of on the Fire Stick:
-
-1. Press the **Router VPN** button in the quick-access bar to toggle it on
-2. The header shows "VPN Connected (Router)"
-3. VPN-required apps will launch without needing a device-level VPN
+---
 
 ## Build from Source
 
@@ -112,6 +316,8 @@ cd firestick-vpn-launcher
 
 APK output: `app/build/outputs/apk/release/app-release.apk`
 
+---
+
 ## Compatibility
 
 - Fire TV Stick (3rd gen and newer)
@@ -119,6 +325,8 @@ APK output: `app/build/outputs/apk/release/app-release.apk`
 - Fire TV Cube
 - Any FireOS 7+ device (Android-based)
 - **Not compatible** with Vega OS devices (Fire TV Stick 4K Select)
+
+---
 
 ## License
 
