@@ -42,9 +42,13 @@ Fire OS blocks third-party APKs by default. You need to allow Downloader to inst
 ### 1c. Download the APK
 
 1. Open **Downloader**
-2. Select the URL bar and enter exactly:
+2. Select the URL bar and enter the code:
    ```
-   tinyurl.com/2dhccdb5
+   6001144
+   ```
+   Or enter the full URL:
+   ```
+   https://github.com/adam-wheater/firestick-vpn-launcher/releases/latest/download/vpn-launcher.apk
    ```
 3. Press **Go** (or the centre button on your remote)
 4. The APK will download automatically — this takes a few seconds
@@ -277,13 +281,13 @@ You won't see any output if it works — that's normal. If you see an error, che
 3. A confirmation dialog appears — press **OK**
 4. Done. Press **Home** — VPN Launcher opens
 
-> If the yellow banner is gone, press the **Home** button. If VPN Launcher doesn't open, open VPN Launcher manually, navigate to the banner, and try again. If you dismissed the banner by accident, restart the app.
+> If the yellow banner is gone, press the **Home** button. If VPN Launcher doesn't open, open VPN Launcher manually, navigate to the banner, and try again. If you dismissed the banner by accident, **long-press the clock** (top-left) and select **"Restore 'Set as Home' banner"**.
 
 ---
 
 ## Updating
 
-Re-download using the same Downloader URL (`tinyurl.com/2dhccdb5`) and install over the top — your settings and app order are preserved.
+Re-download using the same Downloader code (`6001144`) or URL (`https://github.com/adam-wheater/firestick-vpn-launcher/releases/latest/download/vpn-launcher.apk`) and install over the top — your settings and app order are preserved.
 
 Via ADB:
 
