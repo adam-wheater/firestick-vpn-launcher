@@ -165,7 +165,28 @@ class MainActivity : AppCompatActivity() {
     private fun updateClock() {
         val tvAppName = findViewById<TextView>(R.id.tvAppName)
         tvAppName.text = clockFormat.format(Date())
+        tvAppName.setOnLongClickListener {
+            showAppOptionsMenu()
+            true
+        }
         clockHandler.postDelayed({ updateClock() }, 15000) // Update every 15 seconds
+    }
+
+    private fun showAppOptionsMenu() {
+        val options = arrayOf(getString(R.string.restore_home_banner))
+        AlertDialog.Builder(this)
+            .setTitle(R.string.app_options)
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> {
+                        configStore.isBannerDismissed = false
+                        updateSetAsHomeVisibility()
+                        android.widget.Toast.makeText(this, R.string.home_banner_restored, android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
     }
 
     // --- Show/hide hidden apps ---

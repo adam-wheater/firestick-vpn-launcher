@@ -54,6 +54,14 @@
             </intent-filter>
         </receiver>
 
+        <receiver
+            android:name=".DevCommandReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.vpnlauncher.RESET_BANNER" />
+            </intent-filter>
+        </receiver>
+
         <service
             android:name=".AppBlockerService"
             android:label="@string/app_name"

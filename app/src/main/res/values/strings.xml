@@ -31,4 +31,7 @@
     <string name="got_it">Got It</string>
     <string name="skip">Skip</string>
     <string name="dismiss">Dismiss</string>
+    <string name="app_options">App Options</string>
+    <string name="restore_home_banner">Restore \'Set as Home\' banner</string>
+    <string name="home_banner_restored">\'Set as Home\' banner restored.</string>
 </resources>
