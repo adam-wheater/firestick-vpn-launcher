@@ -24,6 +24,8 @@
             android:textColor="@color/text_primary"
             android:textSize="24sp"
             android:textStyle="bold"
+            android:focusable="true"
+            android:clickable="true"
             android:longClickable="true" />
 
         <LinearLayout
